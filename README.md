@@ -1,2 +1,8 @@
-# JCTree
-嘉诚信息树形控件
+# JCTree 是一款基于select2和ztree的树形控件封装
+
+```javascript
+  JCTree.init({
+      container : 'jctreeTest',
+      controlId : 'test1-jctree'
+  });
+```
