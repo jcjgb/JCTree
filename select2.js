@@ -543,14 +543,12 @@
 			if(eData){
 				if(eData.length){
 					//成立的话就是有多个根节点
-			
 					for (var i = 0,len = eData.length;i < len; i++) {
 						var dydata = eData[i];
 						dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+dydata.id+'" name="depts" onClick="selectControl.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+dydata.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+dydata.name+'</span></label> '));
 						
 						uList.push(thie.joinString(dydata.user,isCheckOrRadio,selectId,modalDivId,((type == 'line')?'#60AAE9':'')));
 					}
-
 				}else{
 					if(eData.user && eData.user.length > 0){
 						dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+eData.id+'" name="depts" onClick="selectControl.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+eData.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+eData.name+'</span></label> '));
@@ -1297,7 +1295,7 @@
   					'<div class="fl w-p100">',
 	  					'<input type="hidden" id="'+opt.widgetId+'" name="'+opt.widgetName+'" style="width:100%"/>',
 	  				'</div>',
-	  				'<a class="btn btn-file no-all input-group-btn" '+(opt.isReadonly?'style="cursor:default"':'href="#" id="'+opt.openBtnId+'"')+' role="button">',
+	  				'<a class="btn btn-file no-all input-group-btn" '+(opt.isReadonly?'style="cursor:default"':'id="'+opt.openBtnId+'"')+'>',
 	  					'<i class="fa fa-group"></i>',
 	  				'</a>',
 	  				SelectControl.getZhaiKaiDom(opt.clearBtnId)
@@ -1305,7 +1303,7 @@
   				radioDom = [
   					'<div class="select2-wrap input-group w-p100">',
   						'<input type="hidden" id="'+opt.widgetId+'" name="'+opt.widgetName+'" style="width:100%"/>',
-	  					'<a class="btn btn-file no-all input-group-btn" '+(opt.isReadonly?'style="cursor:default"':'href="#" id="'+opt.openBtnId+'"')+' role="button">',
+	  					'<a class="btn btn-file no-all input-group-btn" '+(opt.isReadonly?'style="cursor:default"':'id="'+opt.openBtnId+'"')+'>',
 		  					'<i class="fa fa-group"></i>',
 		  				'</a>',
 		  			'</div>',
@@ -1417,9 +1415,9 @@
   				$ele = $('#'+opt.widgetId),
   				datas= thie.select2CacheData;
   			$ele.select2({
-  				placeholder: " ",
-			    multiple: true,
-			    query: function (query){
+  				placeholder	: " ",
+			    multiple 	: !opt.single,
+			    query		: function (query){
 			        var data = {results: []};
 			        if(datas.length > 0){
 			        	$.each(datas, function(){
@@ -1439,6 +1437,9 @@
 			    }
   			});
   			thie.showValue(opt.echoData);
+			if(opt.isReadonly){
+				$ele.select2("readonly", true);
+			}
   			thie.initEvent();
   		},
   		/**
@@ -1448,18 +1449,24 @@
   		initEvent  : function(){
   			var thie = this,
   				opt  = thie.option,
-  				$deptAndPerson = $('#'+opt.selectDeptAndPersonId),
-  				$selct2 = $('#'+opt.widgetId);
+  				$deptAndPerson = $('#'+opt.selectDeptAndPersonId);
   			/**
   			 * [弹出显示事件]
   			 */
 			$("#"+opt.openBtnId).on('click',function(){
 				$deptAndPerson.empty();
-				var data = $selct2.select2("data");
-				for (var i = 0,len = data.length;i < len;i++){
-					var v = data[i];
-					$deptAndPerson.append("<option value='"+v.id+","+v.type+"'>"+v.text+"["+(v.type == 1?'组织':'人员')+"]</option>");
+				$('#'+opt.selectPersonId).empty();
+				var data =  $('#'+opt.widgetId).select2("data");
+				if(opt.single &&　data){
+					data = new Array(data);
 				}
+				if(data){
+					for (var i = 0,len = data.length;i < len;i++){
+						var v = data[i];
+						$deptAndPerson.append("<option value='"+v.id+","+v.type+"'>"+(v.text+''+(v.type == 1?'[人员]':'[组织]'))+"</option>");
+					}
+				}
+
 				var setting = {
 					check:{
 						enable: true,		 // 设置 zTree 的节点上是否显示 checkbox/radio
@@ -1529,15 +1536,16 @@
 				if(zNodes.length){
 					var tree = $.fn.zTree.init($("#"+opt.treeId), setting, zNodes);
 					tree.expandAll(true);
-					for(var i = 0; i < data.length;i++){
-						var v = data[i];
-						if(v.type == 2){
-							var node = tree.getNodeByParam("id", v.id, null);
-							if(node != null)tree.checkNode(node, true, false, true);
+					if(data){
+						for(var i = 0; i < data.length;i++){
+							var v = data[i];
+							if(v.type == 2){
+								var node = tree.getNodeByParam("id", v.id, null);
+								if(node != null)tree.checkNode(node, true, false, true);
+							}
 						}
 					}
 				}
-				
 				$("#"+opt.modalId).modal("show");	//显示部门人员界面
 			});
   			/**
@@ -1563,38 +1571,58 @@
   			 * [向左]
   			 */
   			$('#'+opt.leftId).on('click',function(){
-  				var persons = $("#"+opt.selectDeptAndPersonId).find("option:selected");
+  				var persons = $deptAndPerson.find("option:selected");
   				thie.actions['left'].call(thie,persons);
   			});
   			/**
   			 * [向上]
   			 */
   			$('#'+opt.upId).on('click',function(){
-
+				thie.actions['up'].call(thie,$deptAndPerson);
   			});
   			/**
   			 * [向下]
   			 */
   			$('#'+opt.downId).on('click',function(){
-
+				thie.actions['down'].call(thie,$deptAndPerson);
   			});
   			/**
   			 * [select选择框双击事件--向右添加]
   			 */
   			$('#'+opt.selectPersonId).on('dblclick',function(){
-
+				thie.actions['dbright'].call(thie,$("#"+opt.selectPersonId),$deptAndPerson);
   			});
   			/**
   			 * [select选择框双击事件--向左添加]
   			 */
   			$deptAndPerson.on('dblclick',function(){
-
+				thie.actions['dbleft'].call(thie,$deptAndPerson,$("#"+opt.selectPersonId));
   			});
   			/**
   			 * [确定按钮]
   			 */
-  			$('#'+opt.downId).on('click',function(){
-
+  			$('#'+opt.confirmBtnId).on('click',function(){
+				var selecteds = $deptAndPerson.find("option");
+				if(selecteds.length){
+					var result =[];
+					for(var i = 0,len = selecteds.length;i < len;i++){
+						var data  = selecteds[i],
+							value = data.value.split(','),
+							text  = data.text.substr(0,data.text.indexOf(value[1] == '1'?'[人员]':'[组织]'));
+						result.push({
+							id	: value[0],
+							type: value[1],
+							text: text
+						});
+					}
+					$("#"+opt.selectPersonId).empty();
+					$deptAndPerson.empty();
+					thie.showValue(result);
+				}else{
+					msgBox.info({content:'请选择组织或人员',type:'fail'});
+					return false;
+				}
+				$("#"+opt.modalId).modal("hide");
   			});
   		},
   		/**
@@ -1604,74 +1632,118 @@
   		showValue  : function(data){
   			var opt = this.option;
   			if(data){
-  				$('#'+opt.widgetId).select2("data", data);
+  				$('#'+opt.widgetId).select2("data", opt.single?data[0]:data);
   			}
   		},
+		/**
+		 * 移动人员事件
+		 */
   		actions : {
-  			up : function(){
-
+  			up : function(select){
+				if(select.val() == null){
+					msgBox.tip({content: "请选择升序的组织或人员", type:'fail'});
+				}else{
+					var $selects = select.find('option:selected');
+					if($selects.length > 1){
+						msgBox.tip({content: "请选择一项进行调整", type:'fail'});
+					}else{
+						var optionIndex = select.get(0).selectedIndex;
+						if(optionIndex > 0){
+							$selects.insertBefore($selects.prev('option'));
+						}
+					}
+				}
   			},
-  			down : function(){
-
+  			down : function(select){
+				if(select.val() == null){
+					msgBox.tip({content: "请选择升序的组织或人员", type:'fail'});
+				}else{
+					var $selects = select.find('option:selected');
+					if($selects.length > 1){
+						msgBox.tip({content: "请选择一项进行调整", type:'fail'});
+					}else{
+						var optionIndex = select.get(0).selectedIndex;
+						if(optionIndex > 0){
+							$selects.insertAfter($selects.next('option'));
+						}
+					}
+				}
   			},
+			/**
+			 * 向左移动
+			 */
   			left : function(persons){
   				var opt = this.option,
   					len = persons.length;
   				if(len > 0){
-					$.each(persons,function(i, v){
-						if(v.text.indexOf("[人员]") != -1){
-							$("#"+opt.selectPersonId).append("<option value='"+v.value.split(",")[0]+"'>"+v.text.substr(0,v.text.indexOf("[人员]"))+"</option>");
+					for(var i = 0,len = persons.length;i < len;i++){
+						var v = persons[i],
+							item = v.value.split(',');
+						if(item[1] == '1'){
+							$("#"+opt.selectPersonId).append("<option value='"+item[0]+"'>"+v.text.substr(0,v.text.indexOf("[人员]"))+"</option>");
+							$(v).remove();
+						}else{
+							$(v).remove();
 						}
-					});
-					persons.find("option:selected").remove();
+					}
 				}else{
 					msgBox.tip({content: "请选择要移除的组织或人员", type:'fail'});
 				}
   			},
+			/**
+			 * 向右移动
+			 */
   			right : function(persons){
   				var opt     = this.option,
   					treeObj = $.fn.zTree.getZTreeObj(opt.treeId),
   					nodes   = treeObj.getSelectedNodes(),
   					$select = $('#'+opt.selectDeptAndPersonId),
   					len     = persons.length;
-  					console.log(nodes);
   				if(nodes.length <= 0 && len <= 0){
 					msgBox.tip({content: "请选择要添加的组织或人员", type:'fail'});
 					return false;
 				}
-
+				//移动组织
 				if(nodes.length > 0){
-					if(opt.single){
-						$select.find("option:last").remove();
-						$select.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+"[组织]</option>");
-						treeObj.cancelSelectedNode(nodes[0]);
-					}else{
-						$select.find("option[value='"+nodes[0].id+",2']").remove();
-						$select.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+"[组织]</option>");
-						treeObj.cancelSelectedNode(nodes[0]);
-					}
+					opt.single?$select.empty():$select.find("option[value='"+nodes[0].id+",2']").remove();
+					$select.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+"[组织]</option>");
+					treeObj.cancelSelectedNode(nodes[0]);
 				}
-
+				//移动人员
 				if(len > 0){
-					if(opt.single){
-						$.each(persons,function(i, v){
+					for(var i = 0,len = persons.length;i < len;i++){
+						var v = persons[i];
+						if(opt.single){
 							$select.empty();
-							$select.append("<option value='"+v.value+",1'>"+v.text+"[人员]</option>");
-						});
-					}else{
-						$.each(persons,function(i, v){
+						}else{
 							$select.find("option[value='"+v.value+",1']").remove();
-							$select.append("<option value='"+v.value+",1'>"+v.text+"[人员]</option>");
 							$("#"+opt.selectPersonId+" option[value='"+v.value+"']").remove();
-						});
+						}
+						$select.append("<option value='"+v.value+",1'>"+v.text+"[人员]</option>");
 					}
 				}
   			},
-  			dbright : function(){
+  			dbright : function(ele,newElement){
+				var opt  = this.option,
+					objs = ele.find('option:selected');
+				if(objs.length){
+					var v = objs[0];
+					opt.single?newElement.empty():objs.remove();
+					newElement.append("<option value='"+v.value+",1'>"+v.text+"[人员]</option>");
 
+				}
   			},
-  			dbleft  : function(){
-
+  			dbleft  : function(ele,newElement){
+				var opt  = this.option,
+					objs = ele.find('option:selected');
+				if(objs.length){
+					var v = objs[0],
+						value = v.value.split(',');
+					if(value[1] == '1' && !opt.single){
+						newElement.append("<option value='"+value[0]+",1'>"+v.text.substr(0,v.text.indexOf("[人员]"))+"</option>");
+					}
+					objs.remove();
+				}
   			}
   		},
   		/**
@@ -1716,7 +1788,7 @@
   					downId 		: 'downBtn'+ index,
   					//  确认按钮ID
   					confirmBtnId: 'confirmBtn'+ index,
-  					//  确认按钮ID
+  					//  清空按钮ID
   					clearBtnId 	: 'clearBtn'+ index
   				};
 			return option;
@@ -1739,5 +1811,4 @@
     }
 
 	window.selectControl = selectControl;
-
 })(jQuery);
