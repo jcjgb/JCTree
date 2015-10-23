@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title>Gezg Demo</title>
+		<meta name="description" content="http://jcjgb.github.io/">
+		<meta name="keywords" content="http://jcjgb.github.io/">
+		<link href="css/JcGoa_v2.0.css" rel="stylesheet">
+		<link rel="stylesheet" type="text/css" href="css/select2.all.css">
+		<link rel="stylesheet" type="text/css" href="css/ztreecss/zTreeStyle/zTreeStyle.css">
+		<script type="text/javascript">
+			function getRootPath(){
+				return '';
+			}
+
+			var JSON = {};
+			JSON.parse = function(data){
+				if(typeof data === 'string'){
+					return eval('('+data+')');
+				}
+				return data;
+			}
+		</script>
+		<script type="text/javascript" src="js/jquery.min.js"></script>
+		<script type="text/javascript" src="js/app.v2.min.js"></script>
+		<script type="text/javascript" src="js/select2.all.js"></script>
+		<script type="text/javascript" src="js/jquery.ztree.all-3.5.min.js"></script>
+		<script type="text/javascript" src="js/ChinesePY.js"></script>
+		<script type="text/javascript" src="select2.js"></script>
+	</head>
+	<body>
+	    <section class="scrollable padder jcGOA-section" id="scrollable">
+<header class="con-header pull-in" id="header_1">
+	<div class="con-heading fl">
+		<h1>人员部门控件演示</h1>
+		<div class="crumbs">
+			<a href="#">首页</a><i></i>人员部门控件
+		</div>
+	</div>
+</header>
+<section class="tree-fluid m-t-md">
+	<section class="tree-right">
+		<section class="panel">
+			<div class="table-wrap form-table">
+				<table class="table table-td-striped tab_height">
+					<tbody>
+						<tr>
+							<td style="width:15%;">人员控件最简调用</td>
+							<td> <!-- class="selection-tree" -->
+								<div id="controlTree0"></div>
+								
+							</td>
+						</tr>
+						<tr>
+							<td style="width:15%;">人员控件</td>
+							<td> <!-- class="selection-tree" -->
+								<div id="controlTree1"></div>
+								
+							</td>
+						</tr>
+						<tr>
+							<td>组织机构控件</td>
+							<td>
+								<div id="controlTree2"></div>
+								<div id="controlTree3"></div>
+								<div id="controlTree4"></div>
+							</td>
+						</tr>
+						<tr>
+							<td>组织机构控件</td>
+							<td>
+		<input id="controlTree5" type="button" class="btn dark button" value="按钮弹出组织控件" onclick="openOrg(this.id, 'name10-name');"/>
+							</td>
+						</tr>
+						<tr>
+							<td>机构控件</td>
+							<td>
+								<div id="controlTree6"></div>
+							</td>
+						</tr>
+
+						<tr>
+							<td>组织人员</td>
+							<td>
+								<div id="controlTree7"></div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</section>
+</section>
+<script type="text/javascript">
+	$(document).ready(function(){
+		/**
+		 * @param {[String]}  container  	 显示控件的容器ID 
+		 *                    注释:      	 页面多次调用控件传入的值不能重复
+		 * @param {[String]}  controlId  	 是本控件中文本框的id与name
+		 *                    注释:      	 页面多次调用控件传入的值不能重复[*规则是"id-name",id不要重名]以便后台取值
+		 * @param {[Boolean]} isCheckOrRadio 多选or单选
+		 *                    注释:  		 true:多选,flase:单选
+		 * @param {[Boolean]} isPersonOrOrg  人员or组织
+		 *                    注释: 		 true:人员,flase:组织
+		 * @param {[Boolean]} orgOrDept		 机构/部门
+		 *                    注释: 		 1:机构,0:部门,“”或者null全部
+		 * @param {[Object]}  echoData		 回显数据
+		 *                    注释: 		 没有可不填   
+		 * @param {[Boolean]} isReadonly	 是否禁用
+		 *                    注释: 		 true == 禁用	
+		 * @param {[Function]}callback 		 回调方法
+		 *        			  注释: 		 没有可不填 单选返回object{id:xxx,text:xxx}       多选只支持点击确定回调
+		 * @param {[String]}  personUrl 	 人员数据URL
+		 *        			  注释: 		 *必填
+		 * @param {[String]}  orgUrl 		 组织数据URL
+		 *        			  注释: 		 *必填
+		 */
+		selectControl.setConfig({
+			urls : {
+				user 	: "data.json",
+				org	  	: "org.json",
+				orgNoDept : "orgNoDept.json",
+				line    : "line.json",
+				post    : "post.json",
+				personGroup : "/department/getPersonGroupAndUser.action",
+				publicGroup : "/department/getPublicGroupAndUser.action"
+			}
+		});
+		/*********人员***********/
+		selectControl.init({	
+			container  	: 'controlTree0',
+			controlId	: 'name0-name'
+		});
+
+		//多选有回显参数
+		selectControl.init({	
+			container  	: 'controlTree1',
+			controlId	: 'name1-name',
+			isCheckOrRadio	: false,
+			isPersonOrOrg	: true,
+			orgOrDept		: null,
+			echoData		: {
+				"id":"108798",
+				"text":"2222"
+			},
+			callback : function(obj){
+				//目前支持点击确定回调
+				//console.log(obj);
+			},
+			//isReadonly		: true
+		});
+		/*********组织***********/
+		selectControl.init({
+			container  	: 'controlTree2',
+			controlId	: 'name2-name',
+			isCheckOrRadio	: false,
+			isPersonOrOrg	: false,
+			orgOrDept		: 'org',
+			echoData		: {
+				"id":"1006",
+				"text":"测试人员树3"
+			},
+			callback : function(obj){
+				//window.console && console.log(obj);
+			},
+		});
+		
+		selectControl.init({
+			container  	: 'controlTree3',
+			controlId	: 'name3-name',
+			isCheckOrRadio	: false,
+			isPersonOrOrg	: false,
+			orgOrDept		: 'dept'
+		});
+
+		selectControl.init({
+			container  	: 'controlTree4',
+			controlId	: 'name4-name',
+			isPersonOrOrg	: false
+		});
+		/*********机构***********/
+		selectControl.init({
+			container  	: 'controlTree5',
+			controlId	: 'name5-name',
+			isPersonOrOrg	: false,
+			orgOrDept		: 'onlyOrg'
+		});
+
+		selectControl.init({
+			container  	: 'controlTree6',
+			controlId	: 'name6-name',
+			isCheckOrRadio	: false,
+			isPersonOrOrg	: false,
+			orgOrDept		: 'onlyOrg'
+		});
+
+
+		selectControl.orgDept({
+			container : 'controlTree7',
+			widgetId  : 'orgDept7',
+			widgetName: 'orgName7',
+			url 	  : 'orgdept.json'
+		});
+	});
+
+var select111 = null;
+
+function openOrg(modalId,id){
+	//这样调用每次进入都会重新初始化
+	if(!select111){
+		select111 = selectControl.init({	
+			container  	: modalId,
+			controlId	: id,
+			isCheckOrRadio	: false,
+			isPersonOrOrg	: false,
+			callback    : function(obj){
+				//console.log(obj);
+			}
+		});
+	}
+	select111.show();
+}
+</script>
+</section>
+	</body>
+</html>

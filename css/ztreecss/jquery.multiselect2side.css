@@ -1,0 +1,164 @@
+.ms2side__div {
+	clear: left;
+	width: 100%;
+	padding: 1px;
+	float: left;
+	/* background : url('') repeat-x;  HACK FOR CHROME */
+}
+
+.ms2side__select {
+	float: left;
+}
+.ms2side__select select {
+    background: #f6f6f6;
+    border: 1px solid #eee;
+    margin-top: 0;
+}
+.ms2side__select select:focus{
+    outline:0;
+    border: 1px solid #ddd;
+}
+.ms2side__header {
+	color: #333;
+    font-size: 12px;
+	background-color: #e2ebf0;
+	width: 220px;
+	height: 32px;
+    line-height: 32px;
+    padding-left: 10px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.ms2side__options, .ms2side__updown {
+	float: left;
+	margin: 0;
+	padding: 0 8px;
+	width: 36px;
+	color: #fff;
+	text-align: center;
+	overflow: hidden;
+}
+
+.ms2side__updown {
+	font-size: 9pt;
+}
+
+.ms2side__options p, .ms2side__updown p {
+    color:#fff;
+    width: 20px;
+    height: 20px;
+	margin: 2px 0;
+	padding: 0;
+	cursor: pointer;
+	border: 0 none;
+    background-color: #00a359;
+}
+
+.ms2side__options p.AddAll,.ms2side__options p.RemoveAll{
+    background-color: #3366cc;
+}
+
+.ms2side__options p span, .ms2side__updown p span{
+    padding: 0 !important;
+    font-size: 12px;
+    margin-top: 3px;
+    display:inline-block;
+    font-style:normal;
+    font-weight:normal;
+    line-height:1;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+}
+/*
+.ms2side__options p span, .ms2side__updown p span{
+    padding: 0 !important;
+    font-size: 12px;
+    margin-top: 3px;
+    display:inline-block;
+    font-family:JiaChengGOA;
+    font-style:normal;
+    font-weight:normal;
+    line-height:1;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+}
+*/
+.ms2side__options p.AddOne span:before{content:"\e61d"}
+.ms2side__options p.AddAll span:before{content:"\e61d\e61d"}
+.ms2side__options p.RemoveOne span:before{content:"\e61c"}
+.ms2side__options p.RemoveAll span:before{content:"\e61c\e61c"}
+
+.ms2side__options p.ms2side_hover, .ms2side__updown p.ms2side_hover {
+	background-color: #00a359;
+	cursor: pointer;
+}
+
+.ms2side__options p.ms2side__hide, .ms2side__updown p.ms2side__hide {
+	cursor: default;
+	color: #fff;
+	border: 0 none;
+	background-color: #00a359;
+}
+
+.ms2side__options p.AddAll, .ms2side__options p.RemoveAll {
+    color:#fff;
+	background-color: #3366cc;
+}
+
+.ms2side__div select {
+	width: 220px;
+	float: left;
+	height:280px !important;
+}
+
+
+/* INPUT FOR SEARCH */
+.ms2side__header input {
+	width: 80px;
+	height: 12px;
+}
+
+.ms2side__header input.wait {
+	width: 80px;
+	height: 12px;
+	background: #FFFFFF url(../img/loading.gif) no-repeat center right;
+}
+
+.ms2side__header input.small {
+	width: 50px;
+	height: 12px;
+}
+
+
+/* INPUT FOR SELECT SEARCH */
+.ms2side__header select {
+	width: 100px;
+	font-size: 11px;
+	height: 18px;
+	float: none;
+}
+
+.ms2side__header select.small {
+	width: 70px;
+}
+
+
+/* REMOVE FILTER OPTION FOR SEARCH */
+.ms2side__header a {
+	font-size: 10pt;
+	padding: 0 8px;
+	width: 16px;
+	height: 16px;
+	color: black;
+	text-align: center;
+	text-decoration: none;
+	border: 1px solid gray;
+	background: #FFFFFF url(../img/close.gif) no-repeat center center;
+	margin: 0 0 0 3px;
+}
+
+.ms2side__header a:hover {
+	background-color: #F0F0FF;
+	border-color: gray;
+}

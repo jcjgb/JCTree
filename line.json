@@ -1,0 +1,37 @@
+[{
+	"deptType": 1,
+	"id": 1,
+	"name": "嘉诚网络",
+	"parentId": 0,
+	"subDept": [{
+		"deptType": 0,
+		"id": 1004,
+		"name": "测试人员树1",
+		"parentId": 1,
+		"user": []
+	}, {
+		"deptType": 0,
+		"id": 1005,
+		"name": "测试人员树2",
+		"parentId": 1,
+		"user": []
+	}, {
+		"deptType": 0,
+		"id": 1006,
+		"name": "测试人员树3",
+		"parentId": 1,
+		"user": []
+	}, {
+		"deptType": 0,
+		"id": 1003,
+		"name": "软件研发部",
+		"parentId": 1,
+		"user": [{
+			"deptId": 1003,
+			"displayName": "admin",
+			"id": 1,
+			"orderNo": 1
+		}]
+	}],
+	"user": []
+}]
