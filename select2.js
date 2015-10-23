@@ -1463,7 +1463,7 @@
 				if(data){
 					for (var i = 0,len = data.length;i < len;i++){
 						var v = data[i];
-						$deptAndPerson.append("<option value='"+v.id+","+v.type+"'>"+(v.text+''+(v.type == 1?'[人员]':'[组织]'))+"</option>");
+						$deptAndPerson.append("<option value='"+v.id+","+v.type+"'>"+(v.text+''+(v.type == 1?opt.surnamePerson:opt.surnameDept))+"</option>");
 					}
 				}
 
@@ -1475,8 +1475,9 @@
 						chkboxType: { "Y" : "s", "N" : "ps" }
 					},
 					view:{
-						selectedMulti: true,// 设置是否允许同时选中多个节点
-						showLine: true 		// 设置 zTree 是否显示节点之间的连线
+						selectedMulti: true,	// 设置是否允许同时选中多个节点
+						showLine 	 : true,	// 设置 zTree 是否显示节点之间的连线
+						dblClickExpand : false	//关闭双击展开节点功能
 					},
 					data:{// 确定zTree数据不需要转换为JSON格式,true是需要
 						simpleData:{enable:true}
@@ -1522,13 +1523,14 @@
 							}
 							if(opt.single){
 								$deptAndPerson.find("option:last").remove();
-								$deptAndPerson.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+"[组织]</option>");
+								$deptAndPerson.append("<option value='"+nodes[0].id+",2'>"+(nodes[0].name+opt.surnameDept)+"</option>");
 								treeObj.cancelSelectedNode(nodes[0]);
 							}else{
 								$deptAndPerson.find("option[value='"+nodes[0].id+",2']").remove();
-								$deptAndPerson.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+"[组织]</option>");
+								$deptAndPerson.append("<option value='"+nodes[0].id+",2'>"+(nodes[0].name+opt.surnameDept)+"</option>");
 								treeObj.cancelSelectedNode(nodes[0]);
 							}
+							return false;
 						}
 					}
 				};
@@ -1541,7 +1543,7 @@
 							var v = data[i];
 							if(v.type == 2){
 								var node = tree.getNodeByParam("id", v.id, null);
-								if(node != null)tree.checkNode(node, true, false, true);
+								if(node && node.parentTId)tree.checkNode(node, true, false, true);
 							}
 						}
 					}
@@ -1608,7 +1610,7 @@
 					for(var i = 0,len = selecteds.length;i < len;i++){
 						var data  = selecteds[i],
 							value = data.value.split(','),
-							text  = data.text.substr(0,data.text.indexOf(value[1] == '1'?'[人员]':'[组织]'));
+							text  = data.text.substr(0,data.text.indexOf(value[1] == '1'?opt.surnamePerson:opt.surnameDept));
 						result.push({
 							id	: value[0],
 							type: value[1],
@@ -1680,7 +1682,7 @@
 						var v = persons[i],
 							item = v.value.split(',');
 						if(item[1] == '1'){
-							$("#"+opt.selectPersonId).append("<option value='"+item[0]+"'>"+v.text.substr(0,v.text.indexOf("[人员]"))+"</option>");
+							$("#"+opt.selectPersonId).append("<option value='"+item[0]+"'>"+v.text.substr(0,v.text.indexOf(opt.surnamePerson))+"</option>");
 							$(v).remove();
 						}else{
 							$(v).remove();
@@ -1706,7 +1708,7 @@
 				//移动组织
 				if(nodes.length > 0){
 					opt.single?$select.empty():$select.find("option[value='"+nodes[0].id+",2']").remove();
-					$select.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+"[组织]</option>");
+					$select.append("<option value='"+nodes[0].id+",2'>"+nodes[0].name+''+opt.surnameDept+"</option>");
 					treeObj.cancelSelectedNode(nodes[0]);
 				}
 				//移动人员
@@ -1719,7 +1721,7 @@
 							$select.find("option[value='"+v.value+",1']").remove();
 							$("#"+opt.selectPersonId+" option[value='"+v.value+"']").remove();
 						}
-						$select.append("<option value='"+v.value+",1'>"+v.text+"[人员]</option>");
+						$select.append("<option value='"+v.value+",1'>"+(v.text+opt.surnamePerson)+"</option>");
 					}
 				}
   			},
@@ -1729,7 +1731,7 @@
 				if(objs.length){
 					var v = objs[0];
 					opt.single?newElement.empty():objs.remove();
-					newElement.append("<option value='"+v.value+",1'>"+v.text+"[人员]</option>");
+					newElement.append("<option value='"+v.value+",1'>"+(v.text+opt.surnamePerson)+"</option>");
 
 				}
   			},
@@ -1740,7 +1742,7 @@
 					var v = objs[0],
 						value = v.value.split(',');
 					if(value[1] == '1' && !opt.single){
-						newElement.append("<option value='"+value[0]+",1'>"+v.text.substr(0,v.text.indexOf("[人员]"))+"</option>");
+						newElement.append("<option value='"+value[0]+",1'>"+v.text.substr(0,v.text.indexOf(opt.surnamePerson))+"</option>");
 					}
 					objs.remove();
 				}
@@ -1789,7 +1791,9 @@
   					//  确认按钮ID
   					confirmBtnId: 'confirmBtn'+ index,
   					//  清空按钮ID
-  					clearBtnId 	: 'clearBtn'+ index
+  					clearBtnId 	: 'clearBtn'+ index,
+					surnamePerson : '[人员]',
+					surnameDept   : '[组织]'
   				};
 			return option;
   		}

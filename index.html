@@ -206,7 +206,14 @@
 			container : 'controlTree7',
 			widgetId  : 'orgDept7',
 			widgetName: 'orgName7',
-			url 	  : 'orgdept.json'
+			url 	  : 'orgdept.json',
+			echoData  : [
+				{
+					id		: 1,
+					text	: "嘉诚网络",
+					type	: "2"
+				}
+			]
 		});
 
 		//单选
@@ -215,7 +222,15 @@
 			widgetId  : 'orgDept8',
 			widgetName: 'orgName8',
 			url 	  : 'orgdept.json',
-			single	  : true
+			single	  : true,
+			isReadonly: true,
+			echoData  : [
+				{
+					id		: 1,
+					text	: "嘉诚网络",
+					type	: "2"
+				}
+			]
 		});
 	});
 
