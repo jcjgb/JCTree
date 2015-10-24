@@ -147,14 +147,14 @@
 			var pCheck = ['<div class="select2-wrap input-group w-p100">'];
 			pCheck.push('<div class="fl w-p100">');
 			pCheck.push('<input type="hidden" id="' + opt.controlId + '" name="' + opt.controlId.split("-")[1] + '" style="width:100%" ' + (opt.isReadonly ? "disabled" : "") + '/></div>');
-			pCheck.push('<a class="btn btn-file no-all input-group-btn" ' + (opt.isReadonly ? 'style="cursor:default"' : "href='#' id='" + personBtnId + "'") + '>');
+			pCheck.push('<a class="btn btn-file no-all input-group-btn" ' + (opt.isReadonly ? 'style="cursor:default"' : "href='###' id='" + personBtnId + "'") + '>');
 			pCheck.push('<i class="fa ' + (opt.isCheckOrRadio ? "fa-users" : "fa-user") + '"></i>');
 			pCheck.push('</a>');
 			pCheck.push(SelectControl.getZhaiKaiDom(clearBtnId));
 
 			var pRadio = ['<div class="select2-wrap input-group w-p100">'];
 			pRadio.push('<input type="hidden" id="' + opt.controlId + '" name="' + opt.controlId.split("-")[1] + '" style="width:100%" ' + (opt.isReadonly ? "disabled" : "") + '/>');
-			pRadio.push('<a class="btn btn-file no-all input-group-btn" ' + (opt.isReadonly ? 'style="cursor:default"' : "href='#' id='" + personBtnId + "'") + '>');
+			pRadio.push('<a class="btn btn-file no-all input-group-btn" ' + (opt.isReadonly ? 'style="cursor:default"' : "href='###' id='" + personBtnId + "'") + '>');
 			pRadio.push('<i class="fa ' + (opt.isCheckOrRadio ? "fa-users" : "fa-user") + '"></i>');
 			pRadio.push('</a>');
 
@@ -273,7 +273,7 @@
 			if(opt.isCheckOrRadio)pageDom.push('<div class="fl w-p100">');//btn-in-area 
 			pageDom.push('<input type="hidden" id="'+opt.controlId+'" name="'+opt.controlId.split("-")[1]+'" search="search" style="width:100%"  '+(opt.isReadonly?"disabled":"")+'/>');
 			if(opt.isCheckOrRadio)pageDom.push('</div>');
-			pageDom.push('<a class="btn btn-file no-all input-group-btn" '+(opt.isReadonly?"style='cursor: default;'":"")+' href="#"');
+			pageDom.push('<a class="btn btn-file no-all input-group-btn" '+(opt.isReadonly?"style='cursor: default;'":"")+' href="###"');
 			if(!opt.isReadonly){
 				pageDom.push('id="'+orgObj.openBtnId+'" role="button"');
 			}
