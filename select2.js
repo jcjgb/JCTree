@@ -206,12 +206,14 @@
 				thie.openPerson(opt.isCheckOrRadio, modalDivId, selectBackValueId, opt.controlId);
 			});
 			//清空按钮事件
-			$("#"+clearBtnId).bind("click", function(){
-				thie.clearValue(opt.controlId);
-				if(typeof resetPostscript == 'function'){
-					resetPostscript();
-				}
-			});
+			if(opt.isCheckOrRadio){
+				$("#"+clearBtnId).bind("click", function(){
+					thie.clearValue(opt.controlId);
+					if(typeof resetPostscript == 'function'){
+						resetPostscript();
+					}
+				});
+			}
 			//打开显示层事件
 			$('#'+okPersonBtnId).on('click', function(){
 				thie.showPersonValue(opt.controlId, selectBackValueId, opt.isCheckOrRadio,modalDivId);
@@ -291,6 +293,16 @@
 
 			if(!thie.orgCacheData.length){
 				thie.initOrgData();
+			}
+
+			//清空按钮事件
+			if(opt.isCheckOrRadio){
+				$("#"+orgObj.clearBtnId).bind("click", function(){
+					thie.clearValue(opt.controlId);
+					if(typeof resetPostscript == 'function'){
+						resetPostscript();
+					}
+				});
 			}
 
 			$('#'+orgObj.openBtnId).on('click',function(){
@@ -1163,11 +1175,14 @@
 		$(obj).find("i").toggleClass("fa-chevron-down").end().closest(".tree-list").next().slideToggle();
 		return false;
 	};
+	/**
+	 *拼装右侧展开按钮
+	 */
 	SelectControl.getZhaiKaiDom = function(clearBtnId) {
 		var str = '<div class="input-group-btn m-l-xs selection-tree-btn fr">' +
-			'<a class="a-icon i-trash fr m-b" href="#" id="' + clearBtnId + '"><i class="fa fa-trash"></i>清空</a>' +
-			'<a class="a-icon i-new zk fr" href="#"><i class="fa fa-chevron-down"></i>展开</a>' +
-			'<a class="a-icon i-new sq fr" href="#"><i class="fa fa-chevron-up"></i>收起</a></div>' +
+			'<a class="a-icon i-trash fr m-b" href="###" id="' + clearBtnId + '"><i class="fa fa-trash"></i>清空</a>' +
+			'<a class="a-icon i-new zk fr" href="###"><i class="fa fa-chevron-down"></i>展开</a>' +
+			'<a class="a-icon i-new sq fr" href="###"><i class="fa fa-chevron-up"></i>收起</a></div>' +
 			'</div><label class="help-block hide"></label>';
 		return str;
 	};
@@ -1635,6 +1650,7 @@
   			var opt = this.option;
   			if(data){
   				$('#'+opt.widgetId).select2("data", opt.single?data[0]:data);
+				SelectControl.openPutAwayClear(opt.widgetId);
   			}
   		},
 		/**
@@ -1725,6 +1741,9 @@
 					}
 				}
   			},
+			/**
+			 *双击向右移动
+			 */
   			dbright : function(ele,newElement){
 				var opt  = this.option,
 					objs = ele.find('option:selected');
@@ -1735,6 +1754,9 @@
 
 				}
   			},
+			/**
+			 *双击向左移动
+			 */
   			dbleft  : function(ele,newElement){
 				var opt  = this.option,
 					objs = ele.find('option:selected');
@@ -1761,9 +1783,9 @@
   					//url
   					url  		: getRootPath()+"/department/getOrgAndPersonTree.action",
   					//	主页文本框控件ID
-  					widgetId 	: (opt.widgetId?opt.widgetId:'mainInput'+index),
+  					widgetId 	: (opt.widgetId?opt.widgetId:'orgAndPersonId'+index),
   					//	主页文本框控件Name
-  					widgetName 	: (opt.widgetName?opt.widgetName:'mainInput'+index),
+  					widgetName 	: (opt.widgetName?opt.widgetName:'orgAndPersonName'+index),
   					//  回显数据
   					echoData 	: null,
   					//  是否只读

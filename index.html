@@ -124,11 +124,11 @@
 		 */
 		selectControl.setConfig({
 			urls : {
-				user 	: "data.json",
-				org	  	: "org.json",
-				orgNoDept : "orgNoDept.json",
-				line    : "line.json",
-				post    : "post.json",
+				user 	: "data/data.json",
+				org	  	: "data/org.json",
+				orgNoDept : "data/orgNoDept.json",
+				line    : "data/line.json",
+				post    : "data/post.json",
 				personGroup : "/department/getPersonGroupAndUser.action",
 				publicGroup : "/department/getPublicGroupAndUser.action"
 			}
@@ -204,9 +204,7 @@
 		//多选
 		selectControl.orgDept({
 			container : 'controlTree7',
-			widgetId  : 'orgDept7',
-			widgetName: 'orgName7',
-			url 	  : 'orgdept.json',
+			url 	  : 'data/orgdept.json',
 			echoData  : [
 				{
 					id		: 1,
@@ -221,7 +219,7 @@
 			container : 'controlTree8',
 			widgetId  : 'orgDept8',
 			widgetName: 'orgName8',
-			url 	  : 'orgdept.json',
+			url 	  : 'data/orgdept.json',
 			single	  : true,
 			isReadonly: true,
 			echoData  : [
