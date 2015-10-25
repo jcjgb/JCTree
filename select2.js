@@ -159,37 +159,37 @@
 			pRadio.push('</a>');
 
 
-			var pModal = '<div class="modal fade" id="' + modalDivId + '" aria-hidden="false" openPersonNum="' + thie.rand + '">'+
-							'<div class="modal-dialog w1100 modal-tree" style="padding-top: 8%;">'+
-								'<div class="modal-content">'+
-									'<div class="modal-header clearfix">'+
-										'<button type="button" class="close" data-dismiss="modal" onclick="selectControl.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">×</button>'+
-										'<h4 class="modal-title fl">人员选择</h4>'+
-										'<div class="fl btn-group form-btn m-l-lg" data-toggle="buttons" id="'+typeList+'">'+
-											'<button type="button" name="line" 		  class="btn m-r-sm"> 在线人员</button>'+
-											'<button type="button" name="dept" 		  class="btn m-r-sm dark"> 根据组织</button>'+
-											'<button type="button" name="post" 		  class="btn m-r-sm"> 根据职务</button>'+
-											'<button type="button" name="personGroup" class="btn m-r-sm"> 个人组别</button>'+
-											'<button type="button" name="publicGroup" class="btn m-r-sm"> 公共组别</button>'+
-										'</div>'+
-										'<form role="search" class="fr input-append m-b-none m-r-lg">'+
-											'<span class="add-on">按姓名</span> '+
-											'<input id="' + searchInputId + '" class="form-control m-r-sm" onKeydown="selectControl.searchKeydown();">'+
-											'<button type="button" class="btn" id="' + searchBtnId + '">'+
-												'<i class="fa fa-search"></i>'+
-											'</button>'+
-										'</form>'+
-									'</div>'+
-									'<div class="loading hide" id="dataLoad' + modalDivId + '"></div>'+
-									'<div class="modal-body clearfix" id="modal_' + modalDivId + '"></div>'+
-									'<div class="modal-footer form-btn">'+
+			var pModal = ['<div class="modal fade" id="' + modalDivId + '" aria-hidden="false" openPersonNum="' + thie.rand + '">',
+							'<div class="modal-dialog w1100 modal-tree" style="padding-top: 8%;">',
+								'<div class="modal-content">',
+									'<div class="modal-header clearfix">',
+										'<button type="button" class="close" data-dismiss="modal" onclick="selectControl.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">×</button>',
+										'<h4 class="modal-title fl">人员选择</h4>',
+										'<div class="fl btn-group form-btn m-l-lg" data-toggle="buttons" id="'+typeList+'">',
+											'<button type="button" name="line" 		  class="btn m-r-sm"> 在线人员</button>',
+											'<button type="button" name="dept" 		  class="btn m-r-sm dark"> 根据组织</button>',
+											'<button type="button" name="post" 		  class="btn m-r-sm"> 根据职务</button>',
+											'<button type="button" name="personGroup" class="btn m-r-sm"> 个人组别</button>',
+											'<button type="button" name="publicGroup" class="btn m-r-sm"> 公共组别</button>',
+										'</div>',
+										'<form role="search" class="fr input-append m-b-none m-r-lg">',
+											'<span class="add-on">按姓名</span> ',
+											'<input id="' + searchInputId + '" class="form-control m-r-sm" onKeydown="selectControl.searchKeydown();">',
+											'<button type="button" class="btn" id="' + searchBtnId + '">',
+												'<i class="fa fa-search"></i>',
+											'</button>',
+										'</form>',
+									'</div>',
+									'<div class="loading hide" id="dataLoad' + modalDivId + '"></div>',
+									'<div class="modal-body clearfix" id="modal_' + modalDivId + '"></div>',
+									'<div class="modal-footer form-btn">',
 										'<button id="' + okPersonBtnId + '" class="btn dark" type="button">确 定</button>'+
-										(opt.isCheckOrRadio?'<button id="' + allPersonBtnId + '" class="btn" type="button" >全 选</button>':'')+
-										'<button id="close" class="btn" type="button" onClick="selectControl.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">取 消</button>'+
-									'</div>'+
-								'</div>'+
-							'</div>'+
-						'</div>';
+										(opt.isCheckOrRadio?'<button id="' + allPersonBtnId + '" class="btn" type="button" >全 选</button>':''),
+										'<button id="close" class="btn" type="button" onClick="selectControl.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">取 消</button>',
+									'</div>',
+								'</div>',
+							'</div>',
+						'</div>'];
 			var cType = thie.$controlDivId.attr('type');
 			if(!(cType === 'button' || cType === 'a' || cType === 'input')){
 				//页面dom装填
@@ -198,7 +198,7 @@
 			//初始化select2和数据
 			thie.initPersonData(opt.controlId, modalDivId, selectBackValueId);
 			
-			$('body').append(pModal);
+			$('body').append(pModal.join(''));
 			
 			thie.dataLoad = $('#dataLoad'+modalDivId);
 			//点击按钮事件
@@ -231,7 +231,7 @@
 				thie.switchingType(this,searchInputId,modalDivId,selectBackValueId);
 			});
 
-			return pModal;
+			//return pModal;
 		},
 		//拼装组织树
 		getOrgDom: function() {
@@ -247,24 +247,24 @@
 			/**
 			 * 组织树界面
 			 */
-			var orgDom = '<div class="modal fade" id="'+orgObj.treeId+'" aria-hidden="false">'+
-							'<div class="modal-dialog">'+
-								'<div class="modal-content">'+
-									'<div class="modal-header">'+
-										'<button type="button" class="close" data-dismiss="modal">×</button>'+
-										'<h4 class="modal-title">选择</h4>'+
-									'</div>'+
-									'<div class="loading hide" id="treeLoad' + orgObj.myTreeId + '"></div>'+
-									'<div class="modal-body">'+
-										'<div id="'+orgObj.myTreeId+'" class="ztree"></div>'+
-									'</div>'+
-									'<div class="modal-footer no-all form-btn">'+
-										'<button class="btn dark" type="button" id="'+orgObj.orgbtnId+'">确 定</button>'+
-										'<button class="btn" type="reset" id="close" onClick="selectControl.orgClose(\''+orgObj.treeId+'\',\''+opt.controlId+'\');">取 消</button>'+
-									'</div>'+
-								'</div>'+
-							'</div>'+
-						'</div>';
+			var orgDom = ['<div class="modal fade" id="'+orgObj.treeId+'" aria-hidden="false">',
+							'<div class="modal-dialog">',
+								'<div class="modal-content">',
+									'<div class="modal-header">',
+										'<button type="button" class="close" data-dismiss="modal">×</button>',
+										'<h4 class="modal-title">选择</h4>',
+									'</div>',
+									'<div class="loading hide" id="treeLoad' + orgObj.myTreeId + '"></div>',
+									'<div class="modal-body">',
+										'<div id="'+orgObj.myTreeId+'" class="ztree"></div>',
+									'</div>',
+									'<div class="modal-footer no-all form-btn">',
+										'<button class="btn dark" type="button" id="'+orgObj.orgbtnId+'">确 定</button>',
+										'<button class="btn" type="reset" id="close" onClick="selectControl.orgClose(\''+orgObj.treeId+'\',\''+opt.controlId+'\');">取 消</button>',
+									'</div>',
+								'</div>',
+							'</div>',
+						'</div>'];
 
 			/**
 			 * 输入框与选择按钮界面[组织控件主界面]
@@ -287,7 +287,7 @@
 			if(!(cType === 'button' || cType === 'a' || cType === 'input')){
 				thie.$controlDivId.append(pageDom.join(''));
 			}
-			$('body').append(orgDom);
+			$('body').append(orgDom.join(''));
 
 			thie.dataLoad = $('#treeLoad'+orgObj.myTreeId);
 
@@ -473,7 +473,7 @@
 		 * @return {[type]} [description]
 		 */
 		showPersonValue : function(controlId,selectId,isCorR,modalId){
-			var thie  = this;
+			var thie  = this,
 				users = [];
 			$("#"+selectId).find("option").each(function(i, val){
 				var gv = val.value.split(",");
@@ -598,10 +598,8 @@
 		            '</div>'+
 		        '</section>'
 			);
-			if(eData != null && eData.subDept != null && eData.subDept.length > 0){
-				//selectControl.userList.dom = [],selectControl.userList.html = [];
+			if(eData && eData.subDept && eData.subDept.length > 0){
 				thie.recur(eData.subDept, showlist.find("#lv"), 2, selectId, modalDivId, isCheckOrRadio,type);
-				//selectControl.recurAppendHtml(openPersonDivId);
 			}
 			return showlist;
 		},
@@ -623,22 +621,20 @@
 			}else{
 				list.push('<div style="text-align:center;">'+$.i18n.prop("JC_SYS_007")+'</div>');
 			}
-			var showlist = $(
-				'<section class="w820 fl tree-ul tree-scroll" id="searchVessel'+thie.rand+'">' +
-					'<ul class="tree-horizontal clearfix">' +
-						list.join('') +
-					'</ul>'+
-				'</section>'+
-				'<section class="fl m-l pos-rlt">'+
-					'<select id="'+selectId+'" name="'+selectId+'" multiple="false" class="w170 tree-scroll-right tree-select">'+
-		            '</select>'+
-		            '<div class="tree-sort"><a href="#" onClick="sort(\''+selectId+'\');"><i id="sort" class="fa fa-sort-shang"></i></a></div>'+
-		            '<div class="tree-move"> '+
-		            	'<a href="#" class="tree-move-up" onClick="up(\''+selectId+'\');"><i class="fa fa-caret-up"></i></a> '+
-		            	'<a href="#" class="tree-move-down" onClick="down(\''+selectId+'\');"><i class="fa fa-caret-down"></i></a> '+
-		            '</div>'+
-		        '</section>'
-			);
+			var showlist = ['<section class="w820 fl tree-ul tree-scroll" id="searchVessel'+thie.rand+'">' ,
+								'<ul class="tree-horizontal clearfix">' ,
+									list.join('') ,
+								'</ul>',
+							'</section>',
+							'<section class="fl m-l pos-rlt">',
+								'<select id="'+selectId+'" name="'+selectId+'" multiple="false" class="w170 tree-scroll-right tree-select">',
+								'</select>',
+								'<div class="tree-sort"><a href="#" onClick="sort(\''+selectId+'\');"><i id="sort" class="fa fa-sort-shang"></i></a></div>',
+								'<div class="tree-move"> ',
+									'<a href="#" class="tree-move-up" onClick="up(\''+selectId+'\');"><i class="fa fa-caret-up"></i></a> ',
+									'<a href="#" class="tree-move-down" onClick="down(\''+selectId+'\');"><i class="fa fa-caret-down"></i></a> ',
+								'</div>',
+							'</section>'];
 			return showlist;
 		},
 		/**
@@ -1348,8 +1344,8 @@
   									'<section class="fl pos-rlt">',
   										'<select id="'+opt.selectDeptAndPersonId+'" multiple="true" class="w200 tree-scroll-right tree-s-r tree-select"></select>',
   										'<div class="tree-move tree-ryzz"> ',
-  											'<a href="#" class="tree-move-up" id="'+opt.upId+'"><i class="fa fa-caret-up"></i></a> ',
-  											'<a href="#" class="tree-move-down" id="'+opt.downId+'"><i class="fa fa-caret-down"></i></a> ',
+  											'<a href="###" class="tree-move-up" id="'+opt.upId+'"><i class="fa fa-caret-up"></i></a> ',
+  											'<a href="###" class="tree-move-down" id="'+opt.downId+'"><i class="fa fa-caret-down"></i></a> ',
   										'</div>',
   									'</section>',
   								'</div>',
