@@ -1,41 +1,31 @@
 !(function() {
 	/**
-	 * [SelectControl 人员选择树]
+	 * [JCTree 人员选择树]
 	 * 本控件依赖以下控件
 	 *  	JQuery 		控件
 	 *  	select2 	选择控件
 	 *		zTree 		控件
 	 * 		ChinesePY 	汉字转拼音
-	 * 控件中有两种组件:[1.组织控件、2.组织人员控件]分别支持多选与单选
-	 * 
-	 * @param {[String]}  container  	 显示控件的容器ID 
-	 *                    注释:      	 页面多次调用控件传入的值不能重复
-	 * @param {[String]}  controlId  	 是本控件中文本框的id与name
-	 *                    注释:      	 页面多次调用控件传入的值不能重复[*规则是"id-name",id不要重名]以便后台取值
-	 * @param {[Boolean]} isCheckOrRadio 多选or单选
-	 *                    注释:  		 true:多选,flase:单选
-	 * @param {[Boolean]} isPersonOrOrg  人员or组织
-	 *                    注释: 		 true:人员,flase:组织
-	 * @param {[Boolean]} orgOrDept		 机构/部门
-	 *                    注释:
-	 *                    		 org  === 机构
-	 *                    		 dept === 部门
-	 *                    		 all  === 全部
-	 *                    		 onlyOrg === 只有机构
-	 * 
-	 * @param {[Object]}  echoData		 回显数据
-	 *                    注释: 		 没有可不填   
-	 * @param {[Boolean]} isReadonly	 是否禁用
-	 *                    注释: 		 true == 禁用	
-	 * @param {[Function]}callback 		 回调方法
-	 *        			  注释: 		 没有可不填 单选返回object{id:xxx,text:xxx} 多选只支持点击确定回调
-	 * @param {[String]}  personUrl 	 人员数据URL
-	 *        			  注释: 		 *必填
+	 *  文档查看
+	 *  http://192.168.200.212:8090/pages/viewpage.action?pageId=328159
 	 */
+	var JCTree = {};
 	//控件ID,Name下标标示
-	SelectControl.index = 0;
+	JCTree.index = 0;
+
+	var modalbody = 'body';
+	
+	JCTree.getModalBody = function(){
+		return $(modalbody);
+	};
+
+	JCTree.setModalBody = function(obj){
+		modalbody = obj;
+	};
 
 	SelectControl.DEFALUT = {
+		container		: null,
+		controlId 		: null,
 		isCheckOrRadio	: true,
 		isPersonOrOrg	: true,
 		orgOrDept		: 'all',
@@ -56,20 +46,26 @@
 			//人员组别
 			personGroup : getRootPath()+"/department/getPersonGroupAndUser.action",
 			//公共组别
-			publicGroup : getRootPath()+"/department/getPublicGroupAndUser.action"
+			publicGroup : getRootPath()+"/department/getPublicGroupAndUser.action",
+			//人员详细信息查询
+			findById    : getRootPath()+"/system/getUserById.action",
+			//部门人员
+			orgdept     : getRootPath()+"/department/getOrgAndPersonTree.action",
+			//权限树						  
+			ztree    	: getRootPath()+"/system/managerDeptTree.action",
+			//左右选择
+			mutual 		: getRootPath()+"/leftRightDemo/getData.action"
 		}
 	};
-	
-
 	function SelectControl(options) {
 		var x = 1000,
 			y = 10;
 		//显示层对象
-		this.$controlDivId = $('#' + options.container);
+		this.$controlDivId = options.container?$('#' + options.container):null;
 		//唯一标识
 		this.rand = parseInt(Math.random() * (x - y + 1) + y);
 		//组织机构标识
-		this.index = SelectControl.index = SelectControl.index + 1;
+		this.index = JCTree.index = JCTree.index + 1;
 		//缓存人员数据对象
 		this.userCacheData = [];
 		//缓存部门人员数据对象
@@ -95,7 +91,7 @@
 	SelectControl.prototype = {
 		initialize : function(option) {
 			var thie = this;
-			thie.$controlDivId.empty();
+			if(thie.$controlDivId)thie.$controlDivId.empty();
 			if (option.isPersonOrOrg) {
 				thie.getPersonDom();
 			} else {
@@ -128,7 +124,33 @@
 			}else{
 				SelectControl.orgClose(tid,this.option.controlId);
 			}
-			setTimeout(function(){if(typeof callback === 'function') callback();},350);
+			if(typeof callback === 'function'){
+				setTimeout(function(){callback();},350);
+			}
+		},
+		setData : function(str){
+			var opt = this.option,
+				cacheData = opt.isPersonOrOrg?this.userCacheData:this.orgCacheData,
+				datas     = [];
+			//处理在ie下有时因执行顺序导致回显不显示问题
+			setTimeout(function(){
+				if(typeof str === 'string'){
+					var items = str.split(",");
+					for(var i=0;i<items.length;i++){
+						var id = items[i];
+						for(var j=0;i<cacheData.length;j++){
+							if(cacheData[j].id == id){
+								datas.push({id:id, text:cacheData[j].text});
+								break;
+							}
+						}
+					}
+					$('#'+opt.controlId).select2("data", (datas.length == 1)?{id:datas[0].id,text:datas[0].text}:datas);
+				}else if(typeof str === 'object'){
+					$('#'+opt.controlId).select2("data", str);
+				}
+				SelectControl.openPutAwayClear(opt.controlId);
+			},0);
 		},
 		//拼装人员dom树
 		getPersonDom: function() {
@@ -158,12 +180,11 @@
 			pRadio.push('<i class="fa ' + (opt.isCheckOrRadio ? "fa-users" : "fa-user") + '"></i>');
 			pRadio.push('</a>');
 
-
 			var pModal = ['<div class="modal fade" id="' + modalDivId + '" aria-hidden="false" openPersonNum="' + thie.rand + '">',
 							'<div class="modal-dialog w1100 modal-tree" style="padding-top: 8%;">',
 								'<div class="modal-content">',
 									'<div class="modal-header clearfix">',
-										'<button type="button" class="close" data-dismiss="modal" onclick="selectControl.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">×</button>',
+										'<button type="button" class="close" data-dismiss="modal" onclick="JCTree.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">×</button>',
 										'<h4 class="modal-title fl">人员选择</h4>',
 										'<div class="fl btn-group form-btn m-l-lg" data-toggle="buttons" id="'+typeList+'">',
 											'<button type="button" name="line" 		  class="btn m-r-sm"> 在线人员</button>',
@@ -174,7 +195,7 @@
 										'</div>',
 										'<form role="search" class="fr input-append m-b-none m-r-lg">',
 											'<span class="add-on">按姓名</span> ',
-											'<input id="' + searchInputId + '" class="form-control m-r-sm" onKeydown="selectControl.searchKeydown();">',
+											'<input id="' + searchInputId + '" class="form-control m-r-sm" onKeydown="JCTree.searchKeydown();">',
 											'<button type="button" class="btn" id="' + searchBtnId + '">',
 												'<i class="fa fa-search"></i>',
 											'</button>',
@@ -185,36 +206,35 @@
 									'<div class="modal-footer form-btn">',
 										'<button id="' + okPersonBtnId + '" class="btn dark" type="button">确 定</button>'+
 										(opt.isCheckOrRadio?'<button id="' + allPersonBtnId + '" class="btn" type="button" >全 选</button>':''),
-										'<button id="close" class="btn" type="button" onClick="selectControl.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">取 消</button>',
+										'<button id="close" class="btn" type="button" onClick="JCTree.personClose(\'' + modalDivId + '\',\'' + searchInputId + '\');">取 消</button>',
 									'</div>',
 								'</div>',
 							'</div>',
 						'</div>'];
-			var cType = thie.$controlDivId.attr('type');
-			if(!(cType === 'button' || cType === 'a' || cType === 'input')){
+			if(thie.$controlDivId){
 				//页面dom装填
 				thie.$controlDivId.append(opt.isCheckOrRadio?pCheck.join(''):pRadio.join(''));
 			}
 			//初始化select2和数据
 			thie.initPersonData(opt.controlId, modalDivId, selectBackValueId);
-			
-			$('body').append(pModal.join(''));
+
+			JCTree.getModalBody().append(pModal.join(''));
 			
 			thie.dataLoad = $('#dataLoad'+modalDivId);
-			//点击按钮事件
+			//打开显示层事件
 			$("#"+personBtnId).on("click", function(){
 				thie.openPerson(opt.isCheckOrRadio, modalDivId, selectBackValueId, opt.controlId);
 			});
 			//清空按钮事件
 			if(opt.isCheckOrRadio){
 				$("#"+clearBtnId).bind("click", function(){
-					thie.clearValue(opt.controlId);
+					thie.clearValue();
 					if(typeof resetPostscript == 'function'){
 						resetPostscript();
 					}
 				});
 			}
-			//打开显示层事件
+			//确定按钮
 			$('#'+okPersonBtnId).on('click', function(){
 				thie.showPersonValue(opt.controlId, selectBackValueId, opt.isCheckOrRadio,modalDivId);
 			});
@@ -230,8 +250,6 @@
 			$("#"+typeList).on('click','button',function(){
 				thie.switchingType(this,searchInputId,modalDivId,selectBackValueId);
 			});
-
-			//return pModal;
 		},
 		//拼装组织树
 		getOrgDom: function() {
@@ -260,12 +278,11 @@
 									'</div>',
 									'<div class="modal-footer no-all form-btn">',
 										'<button class="btn dark" type="button" id="'+orgObj.orgbtnId+'">确 定</button>',
-										'<button class="btn" type="reset" id="close" onClick="selectControl.orgClose(\''+orgObj.treeId+'\',\''+opt.controlId+'\');">取 消</button>',
+										'<button class="btn" type="reset" id="close" onClick="JCTree.orgClose(\''+orgObj.treeId+'\',\''+opt.controlId+'\');">取 消</button>',
 									'</div>',
 								'</div>',
 							'</div>',
 						'</div>'];
-
 			/**
 			 * 输入框与选择按钮界面[组织控件主界面]
 			 */
@@ -283,28 +300,25 @@
 			}else{
 				pageDom.push('</div><label class="help-block hide"></label>');
 			}
-			var cType = thie.$controlDivId.attr('type');
-			if(!(cType === 'button' || cType === 'a' || cType === 'input')){
+			if(thie.$controlDivId){
 				thie.$controlDivId.append(pageDom.join(''));
 			}
-			$('body').append(orgDom.join(''));
+			JCTree.getModalBody().append(orgDom.join(''));
 
 			thie.dataLoad = $('#treeLoad'+orgObj.myTreeId);
 
 			if(!thie.orgCacheData.length){
 				thie.initOrgData();
 			}
-
 			//清空按钮事件
 			if(opt.isCheckOrRadio){
 				$("#"+orgObj.clearBtnId).bind("click", function(){
-					thie.clearValue(opt.controlId);
+					thie.clearValue();
 					if(typeof resetPostscript == 'function'){
 						resetPostscript();
 					}
 				});
 			}
-
 			$('#'+orgObj.openBtnId).on('click',function(){
 				thie.select2InitZtree(orgObj.treeId,orgObj.myTreeId);
 			});
@@ -327,7 +341,7 @@
 				//查询人员数据用于搜索
 				//这里使用同步ajax 否则下边的静态方法获取不到thie.deptCacheData
 				$.ajax({
-					async : false,
+					async : (opt.container?true:false),
 					url : opt.urls.user,
 					type : 'GET',
 					success : function(data) {		
@@ -337,7 +351,7 @@
 						}
 					},
 					error: function(){
-						alert("id为 "+controlId+" 获取人员失败");
+						msgBox.tip({content: "获取人员失败", type:'fail'});
 					}
 				});
 			}
@@ -363,9 +377,8 @@
 				}
 				return falg;
 			}
-
 			$.ajax({
-				async: false,
+				async: (opt.container?true:false),
 				url : orgType === 'onlyOrg'?opt.urls.orgNoDept:opt.urls.org,
 				type : 'get',
 				success : function(data) {
@@ -410,14 +423,17 @@
 			},
 			//根据组织
 			dept : function(modalDivId,selectId){
+				$('#modal_'+modalDivId).css('height','300px');
 				var thie = this,
 					opt  = thie.option,
 					data = $('#'+opt.controlId).select2('data');
 				thie.loading('show');
 				SelectControl.openPutAwayClear(opt.controlId);
-				$("#modal_"+modalDivId).html(thie.showUserPage(thie.deptCacheData, selectId, modalDivId, opt.isCheckOrRadio));
-				thie.switching(modalDivId, selectId, opt.isCheckOrRadio, data);
-				thie.loading('hide');
+				//延时300 填充人员，避免人员数量大时页面长时间没响应
+				setTimeout(function(){
+					thie.showUserPage(thie.deptCacheData, selectId, modalDivId, opt.isCheckOrRadio);
+					thie.switching(modalDivId, selectId, opt.isCheckOrRadio, (thie.$controlDivId?data:null));
+				},300);
 			},
 			//根据职务
 			post : function(modalDivId,selectId){
@@ -440,8 +456,7 @@
 		 */
 		getAjaxData : function(modalDivId,selectId,type){
 			var thie = this,
-				opt  = thie.option,
-				$modal = $("#modal_"+modalDivId);
+				opt  = thie.option;
 			thie.loading('show');
 			$.ajax({
 				url : opt.urls[type],
@@ -450,15 +465,17 @@
 					//这里不要用JSON.parse(data)[0]因为有些数据根目录可能有多条
 					switch(type){
 						case 'line':
-							$modal.html(thie.showUserPage(JSON.parse(data)[0], selectId, modalDivId, opt.isCheckOrRadio,type));
+							thie.showUserPage(JSON.parse(data)[0], selectId, modalDivId, opt.isCheckOrRadio,type);
 							break;
 						case 'post':
+							thie.showGroupPage(JSON.parse(data), selectId, modalDivId, opt.isCheckOrRadio,'user');
+							break;
 						case 'personGroup':
 						case 'publicGroup':
-							$modal.html(thie.showGroupPage(JSON.parse(data), selectId, modalDivId, opt.isCheckOrRadio));
+							thie.showGroupPage(JSON.parse(data), selectId, modalDivId, opt.isCheckOrRadio,'group');
 							break;
 						default :
-							$modal.html(thie.showUserPage(JSON.parse(data)[0], selectId, modalDivId, opt.isCheckOrRadio));
+							thie.showUserPage(JSON.parse(data)[0], selectId, modalDivId, opt.isCheckOrRadio);
 					}
 					thie.loading('hide');
 				},
@@ -483,17 +500,20 @@
 				};
 		    });
 			if(users.length > 0){
-				$("#"+controlId).select2("data", (isCorR?users:{id: users[0].id, text: users[0].text}));//多选回显
+				$("#"+controlId).select2("data", (isCorR?users:{id: users[0].id, text: users[0].text}));//回显
 			}else{
 				msgBox.info({content:'请选择人员',type:'fail'});
 				return false;
 			}
-			
 			thie.removeValidSelect2(controlId, isCorR);
 			SelectControl.openPutAwayClear(controlId);
 			thie.setFocus(controlId);
-			if(typeof thie.option.callback === 'function' && isCorR){
-				thie.option.callback.call(thie,$("#"+controlId).select2("data"));
+			if(typeof thie.option.callback === 'function'){// && 
+				if(thie.$controlDivId){
+					if(isCorR)thie.option.callback.call(thie,users);
+				}else{
+					thie.option.callback.call(thie,users);
+				}
 			}
 			if(modalId){
 				$('#'+modalId).modal('hide');
@@ -513,7 +533,7 @@
 				nodes = $tree.getChangeCheckedNodes();
 			if(nodes.length == 0){
 				$("#"+modalId).modal("hide");
-				thie.clearValue(opt.controlId);
+				thie.clearValue();
 				return false;
 			}
 			var rov = [];//人员控件返回的数据集合
@@ -557,13 +577,13 @@
 					//成立的话就是有多个根节点
 					for (var i = 0,len = eData.length;i < len; i++) {
 						var dydata = eData[i];
-						dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+dydata.id+'" name="depts" onClick="selectControl.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+dydata.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+dydata.name+'</span></label> '));
+						dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+dydata.id+'" name="depts" onClick="JCTree.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+dydata.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+dydata.name+'</span></label> '));
 						
 						uList.push(thie.joinString(dydata.user,isCheckOrRadio,selectId,modalDivId,((type == 'line')?'#60AAE9':'')));
 					}
 				}else{
 					if(eData.user && eData.user.length > 0){
-						dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+eData.id+'" name="depts" onClick="selectControl.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+eData.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+eData.name+'</span></label> '));
+						dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+eData.id+'" name="depts" onClick="JCTree.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+eData.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+eData.name+'</span></label> '));
 						uList.push(thie.joinString(eData.user,isCheckOrRadio,selectId,modalDivId,((type == 'line')?'#60AAE9':'')));
 					}else{
 						dList.push('<label class="checkbox fl"><span class="fl w100">'+eData.name+'</span></label> ');
@@ -571,7 +591,7 @@
 					}
 				}
 				uList.push('</div>');
-				dList.push('<a href="#" class="fr m-r tree-btn" onclick="selectControl.dataTreeToogle(this);"><i class="fa fa-chevron-up"></i></a></div>');
+				dList.push('<a href="#" class="fr m-r tree-btn" onclick="JCTree.dataTreeToogle(this);"><i class="fa fa-chevron-up"></i></a></div>');
 			}else{
 				dList.push('<label class="fl"><span class="fl w100"></span></label></div> ');
 				uList.push('<div style="text-align:center;">'+$.i18n.prop("JC_SYS_007")+'</div>');
@@ -598,12 +618,13 @@
 		            '</div>'+
 		        '</section>'
 			);
+			$("#modal_"+modalDivId).html(showlist);
 			if(eData && eData.subDept && eData.subDept.length > 0){
 				thie.recur(eData.subDept, showlist.find("#lv"), 2, selectId, modalDivId, isCheckOrRadio,type);
 			}
-			return showlist;
+			//return showlist;
 		},
-		showGroupPage : function(eData, selectId, modalDivId, isCheckOrRadio){
+		showGroupPage : function(eData, selectId, modalDivId, isCheckOrRadio,type){
 			var thie  = this;
 			var list = [];
 			if(eData.length){
@@ -612,8 +633,8 @@
 						uList = ['<div>'],
 					 	dydata = eData[i];
 					list.push('<li><div class="level1 clearfix tree-list" style="'+((i>0)?"  border-top: 0 !important;":"")+'">');
-					dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+dydata.id+'" name="depts" onClick="selectControl.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+dydata.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+dydata.name+'</span></label> '));
-					uList.push(thie.joinString(dydata.user,isCheckOrRadio,selectId,modalDivId));
+					dList.push((isCheckOrRadio?'<label class="checkbox fl"><input type="checkbox" id="dept'+dydata.id+'" name="depts" onClick="JCTree.addSelect(this,'+selectId+','+modalDivId+')"> <span class="fl w100">'+dydata.name+'</span></label> ':'<label class="radio fl"><span class="fl w100">'+dydata.name+'</span></label> '));
+					uList.push(thie.joinString(dydata[type],isCheckOrRadio,selectId,modalDivId));
 					dList.push('</div>');
 					uList.push('</div>');
 					list.push(dList.join('') + uList.join('') + '</div></li>');
@@ -635,7 +656,8 @@
 									'<a href="#" class="tree-move-down" onClick="down(\''+selectId+'\');"><i class="fa fa-caret-down"></i></a> ',
 								'</div>',
 							'</section>'];
-			return showlist;
+			$('#modal_'+modalDivId).html(showlist.join(''));
+			//return showlist;
 		},
 		/**
 		 * [recur 	递归查询下级菜单]
@@ -651,17 +673,21 @@
 				dLen = deptList.length;
 			for (var i = 0; i < dLen; i++) {
 				var di = deptList[i];
-				//++ recurNum;
-				if(di.subDept){
+				thie.delayed(di,parentHtml, level, selectId, modalId, isCrR,type);
+			}
+		},
+		delayed : function(di,parentHtml, level, selectId, modalId, isCrR,type){
+			var thie = this;
+			if(di.subDept){
 					var mDept = ['<div>'],
 						mUser = ['<div>'];
 					if(di && di.user.length > 0){
-						mDept.push(isCrR?'<label class="checkbox fl"><input type="checkbox" id="' + di.id + '" name="depts" onClick="selectControl.addSelect(this,\'' + selectId + '\',\'' + modalId + '\')"> <span class="fl w100">' + di.name + '</span></label> ':'<label class="radio fl"><span class="fl w100">' + di.name + '</span></label> ');
+						mDept.push(isCrR?'<label class="checkbox fl"><input type="checkbox" id="' + di.id + '" name="depts" onClick="JCTree.addSelect(this,\'' + selectId + '\',\'' + modalId + '\')"> <span class="fl w100">' + di.name + '</span></label> ':'<label class="radio fl"><span class="fl w100">' + di.name + '</span></label> ');
 						mUser.push(thie.joinString(di.user, isCrR, selectId, modalId, ((type == 'line')?'#60AAE9':'')));
 					}else{
 						mDept.push('<label class="checkbox fl"><span class="fl w100">' + di.name + '</span></label> <label class="checkbox inline"></label>');
 					}
-					mDept.push('<a href="#" class="fr m-r tree-btn" onclick="selectControl.dataTreeToogle(this);"><i class="fa fa-chevron-up"></i></a></div>');
+					mDept.push('<a href="#" class="fr m-r tree-btn" onclick="JCTree.dataTreeToogle(this);"><i class="fa fa-chevron-up"></i></a></div>');
 					mUser.push('</div>');
 					var mSub = $([
 							'<li>',
@@ -672,13 +698,14 @@
 								'<ul id="lv' + i + '"></ul>',
 							'</li>'
 					].join(''));
-					mSub.appendTo( parentHtml);
+
+					mSub.appendTo(parentHtml);
 					thie.recur(di.subDept, mSub.children().last(), level + 1, selectId, modalId, isCrR,type);
 				}else{
 					var sDept = ['<div>'],
 						sUser = ['<div>'];
 					if(di.user && di.user.length > 0){
-						sDept.push(isCrR?'<label class="checkbox fl"><input type="checkbox" id="' + di.id + '" name="depts" onClick="selectControl.addSelect(this,\'' + selectId + '\',\'' + modalId + '\')"> <span class="fl w100">' + di.name + '</span></label> ':'<label class="radio fl"><span class="fl w100">' + di.name + '</span></label> ');
+						sDept.push(isCrR?'<label class="checkbox fl"><input type="checkbox" id="' + di.id + '" name="depts" onClick="JCTree.addSelect(this,\'' + selectId + '\',\'' + modalId + '\')"> <span class="fl w100">' + di.name + '</span></label> ':'<label class="radio fl"><span class="fl w100">' + di.name + '</span></label> ');
 						sUser.push(thie.joinString(di.user, isCrR, selectId, modalId, ((type == 'line')?'#60AAE9':'')));
 					}else{
 						sDept.push('<label class="checkbox fl"><span class="fl w100">' + di.name + '</span></label> ');
@@ -693,8 +720,8 @@
 								'</div>',
 							'</li>'].join('');
 					parentHtml.append(sSub);
+
 				}
-			}
 		},
 		/**
 		 * 拼装字符串
@@ -716,8 +743,8 @@
 		        	'" dept="'+temp.deptId+
 		        	'" name="'+((isCheckOrRadio)?temp.id:'radioUser')+
 		        	'" value="'+temp.id+','+temp.displayName+','+((isCheckOrRadio)?temp.orderNo:"")+
-		        	'" onClick="selectControl.addSelect(this,\''+selectId+'\',\''+modalDivId+'\')"> '+
-		        '<a href="#" onclick="SelectControl.showPersonInfo('+temp.id+');"><span style="color:'+((color)?color:"")+'">'+temp.displayName+'</span></a></label> ');
+		        	'" onClick="JCTree.addSelect(this,\''+selectId+'\',\''+modalDivId+'\')"> '+
+		        '<a href="#" onclick="JCTree.showPersonInfo('+temp.id+');"><span style="color:'+((color)?color:"")+'">'+temp.displayName+'</span></a></label> ');
 		    }
 		    return arys.join('');
 		},
@@ -731,10 +758,12 @@
 		switching : function(ModalId, selectId, isCheckOrRadio, eData){
 			var thie    = this;
 			if(isCheckOrRadio){
-				if(eData.length)thie.checkAddSelect(ModalId,selectId,eData);
+				if(eData)thie.checkAddSelect(ModalId,selectId,eData);
 			}else{
 				thie.radioAddSelect(ModalId,selectId,eData);
 			}
+			$('#modal_'+ModalId).css('height','');
+			thie.loading('hide');
 		},
 		/**
 		 * [switchingType 切换人员组别]
@@ -755,7 +784,7 @@
 				 	type: 'fail', 
 				 	success: function(){
 				 		$obj.addClass("dark");
-				 		thie.clearValue(thie.option.controlId);
+				 		thie.clearValue();
 				 		thie.actions[type].call(thie,modalId, selectId);
 				 	}
 				});
@@ -779,9 +808,11 @@
 					SelectControl.addSelect(dom[0],selectId,modalId);
 				}
 			}else{
-				dom = $modal.find("[name='"+eData.id+"']");
-				dom.prop("checked", true);
-				SelectControl.addSelect(dom[0],selectId,modalId);
+				if(eData){
+					dom = $modal.find("[name='"+eData.id+"']");
+					dom.prop("checked", true);
+					SelectControl.addSelect(dom[0],selectId,modalId);
+				}
 			}
 		},
 		//modalId,selectId,eData
@@ -796,7 +827,7 @@
 					dom.prop("checked", true);
 					SelectControl.addSelect(dom[0],selectId,modalId);
 				}else{
-					alert('单选用什么数组做回显参数啊。');
+					msgBox.tip({content: "单选回显参数不能用数组形式！！！", type:'fail'});
 					return false;
 				}
 			}
@@ -822,7 +853,6 @@
 				$select.append(results.join(''));
 			}
 		},
-		
 		/**
 		 * [clearAllUser 清空已选中数据]
 		 * @param  {[type]} selectId [select区域id]
@@ -848,11 +878,9 @@
 			function setSearchPosition(parent,obj){
 				parent.scrollTop(Math.abs(obj.offset().top + parent.scrollTop() - parent.offset().top)-100);
 			}
-
 			if(!thie.searchCacheData.length){
 				thie.searchCacheData = container.find('span:not([class])');
 			}
-				
 			if(len){
 				for(var i = 0; i < len; i++){
 					thie.searchResultData[i].style.color = "#555";
@@ -901,11 +929,9 @@
 			        query.callback(data);
 			    }
 			});
-
 			if(echoData){
 				$("#"+controlId).select2("data", echoData);
 			}
-
 			SelectControl.openPutAwayClear(controlId);
 		},
 		/**
@@ -999,7 +1025,6 @@
 					beforeClick: function(id, node){}
 				}
 			};
-			
 			var zTreeObject = $.fn.zTree.init($("#"+modalId+" #"+treeId), opt.isCheckOrRadio ? settingCheck : settingRadio, thie.ztreeCacheData);
 
 			zTreeObject.expandAll(true);
@@ -1050,20 +1075,32 @@
 		 */
 		readonly : function(){
 			var opt = this.option,
-				id = opt.isPersonOrOrg?('#openPersonBtn'+this.rand):('#openBtnId'+this.rand);
+				id = opt.isPersonOrOrg?('#openPersonBtn'+this.rand):('#open'+this.index);
 			$("#"+opt.controlId).select2("readonly", true);
-			$(id).off();
+			$(id).css('cursor','default').off();
 		},
 		/**
 		 * [unReadonly 解除禁用状态]
 		 * @return {[type]} [description]
 		 */
 		unReadonly : function(){
-			// var mid = 'openPersonDiv'+this.rand,
-			// 	sid = 'backValue'+this.rand,
-			// 	isC = this.option.isCheckOrRadio,
-			// 	cid = this.opt.controlId;
-			// this.openPerson(isC, mid, sid, cid);
+			var thie = this,
+				opt  = this.option,
+				id 	 = opt.isPersonOrOrg?('#openPersonBtn'+this.rand):('#open'+this.index);
+			if(opt.isPersonOrOrg){
+				var mid  = 'openPersonDiv'+thie.rand,
+				    sid  =  'backValue'+thie.rand;
+				$(id).css('cursor','pointer').on("click", function(){
+					thie.openPerson(opt.isCheckOrRadio, mid, sid, opt.controlId);
+				});
+			}else{
+				var treeId 	= "tree"   + thie.index,
+					myTreeId= "myTree" + thie.index;
+				$(id).css('cursor','pointer').on('click',function(){
+					thie.select2InitZtree(treeId,myTreeId);
+				});
+			}
+			$("#"+opt.controlId).select2("readonly", false);
 		},
 		returnOrgValue : function (inputId){
 			var datas = $("#"+inputId).select2("data"),
@@ -1117,9 +1154,10 @@
 		loading : function(type){
 			this.dataLoad[type]();
 		},
-		clearValue : function(controlId){
-			$("#"+controlId).select2("data","");
-			SelectControl.openPutAwayClear(controlId);
+		clearValue : function(){
+			var id = this.option.controlId;
+			$("#"+id).select2("data","");
+			SelectControl.openPutAwayClear(id);
 		}
 	};
 	
@@ -1144,7 +1182,89 @@
 	 * @param  {[type]} userId [description]
 	 */
 	SelectControl.showPersonInfo = function(userId){
-
+		var thie = this,
+			url  = this.DEFALUT.urls.findById;
+		function getName(name){
+			return name?name:'';
+		}
+		var modalDom = [
+			'<div class="modal fade panel" id="showPersonInfo'+thie.index+'" aria-hidden="false">',
+				'<div class="modal-dialog">',
+					'<div class="modal-content">',
+						'<div class="modal-header">',
+							'<button type="button" class="close" data-dismiss="modal">×</button>',
+							'<h4 class="modal-title">用户基本信息</h4>',
+						'</div>',
+						'<div class="modal-body dis-table" id="showPersonModal'+thie.index+'" style="max-height: 661.5999999999999px;">',   
+						'</div>',
+			    	'</div>',
+			    '</div>',
+			'</div>'
+		];
+		if(!$("#showPersonInfo"+thie.index).length){
+			JCTree.getModalBody().append(modalDom.join(''));	
+		}
+		$.ajax({
+			url : url,
+			type : 'post',
+			data: {id: userId},
+			success : function(data) {
+				if(data){
+					var infoDom = [
+	    				'<section class="dis-table-cell" style="width:162px;">',
+	    					'<img src="'+(getRootPath()+(data.photo?'/'+data.photo:'/img/none.jpg'))+'" width="147" height="177">',
+	    				'</section>',
+	    				'<section class="panel-tab-con dis-table-cell" style="padding-bottom:20px;">',
+	    					'<table class="basicMsg" id="pInfo">',
+	    						'<tbody>',
+	    							'<tr>',
+	    								'<td class="w115">用户显示名</td>',
+	    								'<td>'+getName(data.displayName)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>所在部门</td>',
+		    							'<td>'+getName(data.deptName)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>职务</td>',
+		    							'<td>'+getName(data.dutyIdValue)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>级别</td>',
+		    							'<td>'+getName(data.levelValue)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>用户性别</td>',
+		    							'<td>'+getName(data.sexValue)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>用户手机号码</td>',
+		    							'<td>'+getName(data.mobile)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>用户邮箱</td>',
+		    							'<td>'+getName(data.email)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>用户办公电话</td>',
+		    							'<td>'+getName(data.officeTel)+'</td>',
+	    							'</tr>',
+	    							'<tr>',
+		    							'<td>直接领导</td>',
+		    							'<td>'+getName(data.leaderIdValue)+'</td>',
+	    							'</tr>',
+	    						'</tbody>',
+	    					'</table>',
+	    				'</section>'
+					]; 
+					$("#showPersonModal"+thie.index).html(infoDom.join(''));
+					$("#showPersonInfo"+thie.index).modal("show");
+				}
+			},
+			error: function(){
+				msgBox.tip({content: "获取人员详细信息失败", type:'fail'});
+			}
+		});
 	};
 	/**
 	 * [personClose 关闭人员选择树]
@@ -1155,7 +1275,7 @@
 		$("#"+searchId).val("");
 		$("#"+modalId).modal("hide");
 		// allcheckboxFlag = true;
-		// clearInterval(selectControl.userList.timer);
+		// clearInterval(JCTree.userList.timer);
 		// $("#"+openPersonDivId).modal("hide");
 		// if(isOP != null || isOP != undefined)
 		// 	isOpenSinglePerson = true;
@@ -1191,6 +1311,7 @@
 	 * 现在有过滤重名人员
 	 */
 	SelectControl.addSelect = function(obj ,selectId, modalId){
+		if(!obj) return false;
 		var openDiv = $("#"+modalId),
 			selDiv  = $("#"+selectId),
 			options = "",
@@ -1285,21 +1406,21 @@
 	 * @param {[type]} options [description]
 	 */
 	function SelectMove(options){
-		this.index = SelectControl.index = SelectControl.index + 1;
+		this.index = JCTree.index = JCTree.index + 1;
 		this.select2CacheData = [];
-		this.ztreeCacheData   = [];
+		this.ztreesCacheData   = [];
 		this.$zTree = null;
 		this.option = $.extend({}, this.getOptions(options), options);
-		this.initialize(this.option);
+		return this.initialize(this.option);
 	}
 
   	SelectMove.prototype = {
   		initialize : function(opt){
-			this.$element = $('#'+opt.container);
+			this.$element = opt.container?$('#'+opt.container):null;
 			this.getModalDom();
   		},
   		getModalDom: function(opt){
-  			this.$element.empty();
+  			if(this.$element) this.$element.empty();
   			var opt = this.option,
   				checkDom = [
   				'<div class="select2-wrap input-group w-p100">',
@@ -1357,12 +1478,69 @@
   						'</div>',
   					'</div>'
   				];
-  			this.$element.append(opt.single?radioDom.join(''):checkDom.join(''));
-  			$("body").append(modalDom.join(''));
+  			if(this.$element) this.$element.append(opt.single?radioDom.join(''):checkDom.join(''));
+  			JCTree.getModalBody().append(modalDom.join(''));
   			if(this.select2CacheData.length){
   				this.initSelect2();
   			}else{
   				this.initData();
+  			}
+  		},
+  		show : function(callback){
+  			var thie = this;
+  			thie.initZtree();
+  			thie.initEvent();
+  			if(typeof callback === 'function')callback();
+  			$("#"+thie.option.modalId).modal("show");
+  		},
+  		hide : function(callback){
+  			$("#"+this.option.modalId).modal("hide");
+  			if(typeof callback === 'function'){
+				setTimeout(function(){callback();},350);
+			}
+  		},
+  		readonly : function(){
+  			var opt = this.option,
+  				$select = $('#'+opt.widgetId);
+  			$select.select2("readonly", true);
+  			$("#"+opt.openBtnId).css('cursor','default').off();
+  		},
+  		unReadonly : function(){
+  			var opt = this.option,
+				$select = $('#'+opt.widgetId);
+			$select.select2("readonly", false);
+			$("#"+opt.openBtnId).css('cursor','pointer');
+			this.initEvent();
+  		},
+  		setData : function(str){
+  			var opt = this.option,
+  				cacheData = this.ztreesCacheData,
+  				datas     = [];
+  			setTimeout(function(){
+				if(typeof str === 'string'){
+					var items = str.split(",");
+					for(var i=0;i<items.length;i++){
+						var id = items[i];
+						for(var j=0;i<cacheData.length;j++){
+							if(cacheData[j].id == id){
+								datas.push({id:id, text:cacheData[j].text});
+								break;
+							}
+						}
+					}
+					$('#'+opt.widgetId).select2("data", opt.single?{id:datas[0].id,text:datas[0].text}:datas);
+				}else if(typeof str === 'object'){
+					$('#'+opt.widgetId).select2("data", str);
+				}
+				SelectControl.openPutAwayClear(opt.widgetId);
+  			},0);
+  		},
+  		clearValue : function(){
+  			var opt = this.option,
+  				$select = $('#'+opt.widgetId);
+  			$select.select2("data", '');
+  			if(!opt.single){
+  				SelectControl.openPutAwayClear(opt.widgetId);
   			}
   		},
   		/**
@@ -1373,6 +1551,7 @@
   			var thie = this,
   				opt  = thie.option;
   			$.ajax({
+  				async : (opt.container?true:false),
 				url : opt.url,
 				type : 'get',
 				success : function(data) {
@@ -1400,7 +1579,7 @@
 							});
 						}
 
-						thie.ztreeCacheData.push({
+						thie.ztreesCacheData.push({
 							id : item.id,
 							pId : item.parentId,
 							name : item.name,
@@ -1411,12 +1590,15 @@
 							chkDisabled : item.isChecked == 1 ? false : true
 						});
 					}
-					thie.select2CacheData.push(oData);
-					thie.select2CacheData.push(pData);
-					thie.initSelect2();
+					//不使用select2情况下不用初始化
+					if(thie.$element) {
+						thie.select2CacheData.push(oData);
+						thie.select2CacheData.push(pData);
+						thie.initSelect2();
+					}
 				},
 				error: function(){
-					alertx("获取人员组织失败");
+					msgBox.tip({content: "获取人员组织失败", type:'fail'});
 				}
 			});	
   		},
@@ -1453,32 +1635,10 @@
 			}
   			thie.initEvent();
   		},
-  		/**
-  		 * [initEvent 初始化事件]
-  		 * @return {[type]} [description]
-  		 */
-  		initEvent  : function(){
+  		initZtree : function(data){
   			var thie = this,
   				opt  = thie.option,
-  				$deptAndPerson = $('#'+opt.selectDeptAndPersonId);
-  			/**
-  			 * [弹出显示事件]
-  			 */
-			$("#"+opt.openBtnId).on('click',function(){
-				$deptAndPerson.empty();
-				$('#'+opt.selectPersonId).empty();
-				var data =  $('#'+opt.widgetId).select2("data");
-				if(opt.single &&　data){
-					data = new Array(data);
-				}
-				if(data){
-					for (var i = 0,len = data.length;i < len;i++){
-						var v = data[i];
-						$deptAndPerson.append("<option value='"+v.id+","+v.type+"'>"+(v.text+''+(v.type == 1?opt.surnamePerson:opt.surnameDept))+"</option>");
-					}
-				}
-
-				var setting = {
+  				setting = {
 					check:{
 						enable: true,		 // 设置 zTree 的节点上是否显示 checkbox/radio
 						nocheckInherit: true,// 是否自动继承父节点属性
@@ -1543,22 +1703,48 @@
 							}
 							return false;
 						}
-					}
-				};
-				var zNodes = thie.ztreeCacheData;
-				if(zNodes.length){
-					var tree = $.fn.zTree.init($("#"+opt.treeId), setting, zNodes);
-					tree.expandAll(true);
-					if(data){
-						for(var i = 0; i < data.length;i++){
-							var v = data[i];
-							if(v.type == 2){
-								var node = tree.getNodeByParam("id", v.id, null);
-								if(node && node.parentTId)tree.checkNode(node, true, false, true);
-							}
+				}
+			};
+			var zNodes = this.ztreesCacheData;
+			if(zNodes.length){
+				var tree = $.fn.zTree.init($("#"+opt.treeId), setting, zNodes);
+				tree.expandAll(true);
+				if(data){
+					for(var i = 0; i < data.length;i++){
+						var v = data[i];
+						if(v.type == 2){
+							var node = tree.getNodeByParam("id", v.id, null);
+							if(node && node.parentTId)tree.checkNode(node, true, false, true);
 						}
 					}
 				}
+			}
+  		},
+  		/**
+  		 * [initEvent 初始化事件]
+  		 * @return {[type]} [description]
+  		 */
+  		initEvent  : function(){
+  			var thie = this,
+  				opt  = thie.option,
+  				$deptAndPerson = $('#'+opt.selectDeptAndPersonId);
+  			/**
+  			 * [弹出显示事件]
+  			 */
+			$("#"+opt.openBtnId).on('click',function(){
+				$deptAndPerson.empty();
+				$('#'+opt.selectPersonId).empty();
+				var data =  $('#'+opt.widgetId).select2("data");
+				if(opt.single &&　data){
+					data = new Array(data);
+				}
+				if(data){
+					for (var i = 0,len = data.length;i < len;i++){
+						var v = data[i];
+						$deptAndPerson.append("<option value='"+v.id+","+v.type+"'>"+(v.text+''+(v.type == 1?opt.surnamePerson:opt.surnameDept))+"</option>");
+					}
+				}
+				thie.initZtree(data);
 				$("#"+opt.modalId).modal("show");	//显示部门人员界面
 			});
   			/**
@@ -1646,7 +1832,12 @@
   			var opt = this.option;
   			if(data){
   				$('#'+opt.widgetId).select2("data", opt.single?data[0]:data);
-				SelectControl.openPutAwayClear(opt.widgetId);
+  				if(opt.callback){
+  					SelectControl.openPutAwayClear(opt.widgetId);
+  				}
+				if(typeof opt.callback === 'function'){
+					opt.callback.call(this,data);
+  				}
   			}
   		},
 		/**
@@ -1773,15 +1964,17 @@
   		getOptions : function(opt){
   			var index = this.index,
   				option = {
-  					container 	: '',
+  					container 	: null,
   					//  单选或多选
   					single 		: false,
+  					//控件id
+  					controlId   : null,
   					//url
-  					url  		: getRootPath()+"/department/getOrgAndPersonTree.action",
+  					url  		: SelectControl.DEFALUT.urls.orgdept,
   					//	主页文本框控件ID
-  					widgetId 	: (opt.widgetId?opt.widgetId:'orgAndPersonId'+index),
+  					widgetId 	: (opt.controlId?opt.controlId:'orgAndPersonId'+index),
   					//	主页文本框控件Name
-  					widgetName 	: (opt.widgetName?opt.widgetName:'orgAndPersonName'+index),
+  					widgetName 	: (opt.controlId?opt.controlId.split("-")[1]:'orgAndPersonName'+index),
   					//  回显数据
   					echoData 	: null,
   					//  是否只读
@@ -1816,21 +2009,515 @@
 			return option;
   		}
   	};
+  	/**
+  	 * [SelectZtree description]
+  	 * @param 
+  	 * 		id
+  	 * 		url
+  	 * 		onClick
+  	 * 		onCheck
+  	 * 		expand
+  	 * 		selectNode
+  	 */
+  	function SelectZtree(options){
+  		this.ztreesCacheData   = [];
+  		this.option   = $.extend({}, this.getOptions(options), options);
+		return this.initialize(this.option);
+  	}
 
+  	SelectZtree.prototype = {
+  		initialize : function(){
+  			var thie = this,
+  				opt  = thie.option,
+  				$element = $("#"+opt.container),
+  				rootns   = null;
+  			if(!$element.length){
+  				msgBox.tip({content: "容器id填写错误！", type:'fail'});
+  			}
+  			$element.addClass('ztree');
+  			if(opt.zNodes) thie.ztreesCacheData = opt.zNodes;
+  			if(thie.ztreesCacheData.length){
+  				thie.initZtree($element,thie.ztreesCacheData);
+				return false;
+  			}
+  			$.ajax({
+				url : opt.url,
+				type : 'get',
+				success : function(data) {
+					if(data){
+						for(var i = 0,len = data.length;i < len;i++){
+							var o = data[i];
+							thie.ztreesCacheData.push({
+								id : o.id,
+								pId : o.parentId,
+								name : o.name,
+								deptType : o.deptType,
+								checkState : false,
+								iconSkin : o.deptType==0 ? "fa-flag" : "fa-office",
+								leaderName: o.displayName,
+								userType: o.userType,
+								isChecked: o.isChecked
+							});
+						}
+						thie.initZtree($element,thie.ztreesCacheData);
+					}
+				}
+			});
+  		},
+  		initZtree  : function($element,nodes){
+  			var thie = this,
+  				opt  = thie.option,
+  				tree = $.fn.zTree.init($element, opt.setting, nodes);
+			if(opt.expand){
+				tree.expandAll(true);
+				if(opt.selectNode){
+					var node = tree.getNodeByParam("id",opt.selectNode);
+					tree.selectNode(node, true);
+					node.checkState = true;
+					if(typeof opt.onClick === 'function'){
+						opt.onClick.call(thie,$,opt.selectNode,node);
+					}
+				}else{
+					var rootns = opt.rootNode?nodes[0]:null;
+					if(opt.rootNode && rootns){
+						var node = tree.getNodeByParam("id",rootns.id);
+						tree.selectNode(node, true);
+						node.checkState = true;
+						if(typeof opt.onClick === 'function'){
+							opt.onClick.call(thie,$,node.id,node);
+						}
+					}
+				}
+			}
+  		},
+  		getRootNode: function(){
+  			var node = $.fn.zTree.getZTreeObj(this.option.container);
+  			return node;
+  		},
+  		/**
+  		 * [getChildNodesId description]
+  		 * @param  {[type]} node [ZTree对象]
+  		 * @return 
+  		 * 		字符串id以,间隔  '1231,41,51,516'
+  		 */
+  		getChildNodesId : function(node){
+  			var opt = this.option,
+  				treeObj = $.fn.zTree.getZTreeObj(opt.container),
+				childNodes = treeObj.transformToArray(node),
+		    	nodes = "";
+		    for(var i = 0; i < childNodes.length; i++) {
+		    	if(childNodes[i].isChecked == 1){
+		    		nodes = nodes + childNodes[i].id + ",";
+		    	}
+		    }
+		    return nodes.substring(0, nodes.length-1);
+  		},
+  		getOptions : function(opt){
+  			function getZtreeSetting(){
+				return {
+  				//权限树
+					check:{
+						enable: opt.enable,//设置 zTree 的节点上是否显示 checkbox/radio
+						nocheckInherit: false,//是否自动继承父节点属性
+						chkStyle: opt.chkStyle,//勾选框类型(checkbox 或 radio)
+						radioType : "all"//radio的分组范围[setting.check.enable=true且setting.check.chkStyle="radio"时生效]
+					},
+					view:{
+						selectedMulti: false,//设置是否允许同时选中多个节点
+						showLine: false//设置 zTree 是否显示节点之间的连线
+					},
+					data:{
+						simpleData:{
+							enable:true//确定zTree数据不需要转换为JSON格式,true是需要
+						}
+					},
+					callback:{
+						beforeClick: typeof opt.onBeforeClick === 'function'?opt.onBeforeClick:null,
+						////用于捕获 checkbox / radio 被勾选 或 取消勾选的事件回调函数
+						onCheck: typeof opt.onCheck === 'function'?opt.onCheck:null,	
+						//用于捕获节点被点击的事件回调函数
+						onClick: typeof opt.onClick === 'function'?opt.onClick:null,	
+						//onRemove : onRemove
+					}
+				};
+  			}
+  			var index = this.index,
+  				option = {
+  					container: null,
+  					url      : SelectControl.DEFALUT.urls.ztree,
+  					setting  : getZtreeSetting(),
+  					zNodes   : null,
+  					rootNode : false,	//默认选中根节点
+  					expand   : false,	//是否默认展开
+  					selectNode : null,	//默认选中节点 需要expand为true
+  					enable   : false,	//是否显示 checkbox/radio
+  					chkStyle : 'radio'	//勾选框类型(checkbox 或 radio)
+  				};
+			return option;
+  		}
+  	};
 
-	var selectControl = {};
+  	function SelectMutual(options){
+  		this.index = JCTree.index = JCTree.index + 1;
+  		this.selectCacheData   = [];
+  		this.option   = $.extend({}, this.getOptions(options), options);
+		return this.initialize(this.option);
+  	}
 
-	selectControl.init = function(option){
+  	SelectMutual.prototype = {
+  		initialize : function(){
+  			var thie = this,
+  			    opt  = thie.option;
+  			if(opt.echoData){
+
+  			}
+  			thie.appendDom();
+  			thie.initData();
+  			thie.initEvent();
+  		},
+  		show : function(callback){
+  			var thie = this,
+  				opt  = thie.option,
+  				sDate= $('#'+opt.controlId).select2('data'),
+  				$ele = $('#'+opt.leftSelectId);
+  			thie.refresh();
+  			if(sDate){
+  				var results;
+  				if(opt.single){
+  					results = $ele.find("option[value="+sDate.id+"]");
+  					if(results.length)thie.toRight(results[0]);
+  				}else{
+  					for(var i=0;i<sDate.length;i++){
+  						results = $ele.find("option[value="+sDate[i].id+"]");
+  						if(results.length)thie.toRight(results[0]);
+  					}
+  				}
+  			}
+  			if(typeof callback === 'function') callback();
+  			$('#'+opt.modalId).modal('show');
+  		},
+  		hide : function(callback){
+  			$('#'+this.option.modalId).modal('hide');
+  			if(typeof callback === 'function'){
+				setTimeout(function(){callback();},350);
+			}
+  		},
+  		readonly : function(){
+  			var opt = this.option;
+  			$('#'+opt.openBtnId).css('cursor','default').off();
+  			$("#"+opt.controlId).select2("readonly", true);
+  		},
+  		unReadonly : function(){
+  			var opt = this.option;
+  			$('#'+opt.openBtnId).css('cursor','pointer');
+  			this.initEvent();
+  			$("#"+opt.controlId).select2("readonly", false);
+  		},
+  		setData : function(str){
+  			var opt = this.option,
+  				cacheData = this.selectCacheData,
+  				datas     = [];
+  			setTimeout(function(){
+				if(typeof str === 'string'){
+					var items = str.split(",");
+					for(var i=0;i<items.length;i++){
+						var id = items[i];
+						for(var j=0;i<cacheData.length;j++){
+							if(cacheData[j].id == id){
+								datas.push({id:id, text:cacheData[j].text});
+								break;
+							}
+						}
+					}
+					$('#'+opt.controlId).select2("data", opt.single?{id:datas[0].id,text:datas[0].text}:datas);
+				}else if(typeof str === 'object'){
+					$('#'+opt.controlId).select2("data", opt.single?{id:str[0].id,text:str[0].text}:str);
+				}
+				SelectControl.openPutAwayClear(opt.controlId);
+  			},0);
+  		},
+  		clearValue : function(){
+  			var opt = this.option;
+  			$("#"+opt.controlId).select2("data", '');
+  			if(!opt.single){
+  				SelectControl.openPutAwayClear(opt.controlId);
+  			}
+  		},
+  		refresh : function(){
+  			var opt 	  = this.option,
+  				cacheData = this.selectCacheData,
+  				$ele  	  = $('#'+opt.leftSelectId);
+  			$ele.empty();
+  			$('#'+opt.rightSelectId).empty();
+  			for(var i = 0,len = cacheData.length;i < len;i++){
+  				var node = cacheData[i];
+  				$ele.append('<option value="'+node.id+'">'+node.text+'</option>');
+  			}
+  		},
+  		initData   : function(){
+  			var thie = this,
+  				opt  = thie.option;
+			$.ajax({
+				async : (opt.container?true:false),
+				url : opt.url,
+				type : 'get',
+				success : function(data) {
+					if(data){
+						for(var i = 0,len = data.length;i < len;i++){
+							var o = data[i];
+							thie.selectCacheData.push({
+								id : o.code,					//ID
+								text : o.text,					//显示的内容
+								hp: Pinyin.GetHP(o.text),		//两个汉字输入全拼,三个以上的汉字，第一个汉字全拼，后面的汉字简拼
+								qp: Pinyin.GetQP(o.text),		//汉字的全拼
+								jp: Pinyin.GetJP(o.text),		//汉字的简拼
+								wc: Pinyin.getWordsCode(o.text)	//单词首字母获取
+							});
+						}
+						if(opt.container)thie.initSelect2();
+					}
+				},
+				error: function(){
+					msgBox.tip({content: "获取人员失败", type:'fail'});
+				}
+			});
+  		},
+  		initSelect2 : function(){
+  			var opt = this.option,
+  				cacheData = this.selectCacheData;
+  			$("#"+opt.controlId).select2({
+			    placeholder: " ",		//文本框占位符显示
+			    allowClear: true,		//允许清除
+			    multiple: !opt.single,  //单选or多选
+			    query: function (query){
+			        var data = {results: []};
+			        $.each(cacheData, function(){
+			            if(query.term.length == 0 || this.text.toUpperCase().indexOf(query.term.toUpperCase()) >= 0 
+			            		|| this.hp.toUpperCase().indexOf(query.term.toUpperCase()) >= 0
+			            		|| this.qp.toUpperCase().indexOf(query.term.toUpperCase()) >= 0
+			            		|| this.jp.toUpperCase().indexOf(query.term.toUpperCase()) >= 0
+			            		|| this.wc.toUpperCase().indexOf(query.term.toUpperCase()) >= 0){
+			                data.results.push({id: this.id, text: this.text});
+			            }
+			        });
+			        query.callback(data);
+			    }
+			});
+  			if(opt.echoData){
+  				var d = opt.echoData;
+  				$("#"+opt.controlId).select2('data',opt.single?{id:d[0].id,text:d[0].text}:d);
+  			}
+  		},
+  		initEvent : function(){
+  			var thie = this,
+  				opt  = thie.option;
+  			//确定
+  			$('#'+opt.confirmId).on('click',function(){
+  				thie.showMutualValue();
+  			});
+  			//打开
+  			$('#'+opt.openBtnId).on('click',function(){
+				thie.show();
+  			});
+  			//左右移动
+  			$('#move'+opt.modalId).on('click','p',function(){
+				var type = $(this).attr('name'),
+					$ele = ((type == 'left' || type == 'leftAll')?$('#'+opt.leftSelectId):$('#'+opt.rightSelectId));
+				if(opt.single && (type == 'leftAll' || type == 'rightAll')){
+					return false;
+				}
+				thie.actions[type].call(thie,$ele,opt.single);
+  			});
+  			//左侧选择框双击
+  			$('#'+opt.leftSelectId).on('dblclick',function(){
+  				var option = $("option:selected",this)[0];
+  				thie.toRight(option);
+  			});
+  			//右侧选择框双击
+  			$('#'+opt.rightSelectId).on('dblclick',function(){
+  				var option = $("option:selected",this)[0];
+  				thie.toLeft(option);
+  			});
+  			//清空按钮
+  			if(!opt.single){
+  				$('#'+opt.clearBtnId).on('click',function(){
+					$("#"+opt.controlId).select2("data", "");
+					SelectControl.openPutAwayClear(opt.controlId);
+					if(typeof resetPostscript == 'function'){
+						resetPostscript();
+					}
+				});
+  			}
+  		},
+  		actions : {
+  			left : function($ele,single){
+  				var selecteds = $ele.find('option:selected');
+  				if(single && selecteds.length > 1){
+  					msgBox.tip({content: "只能选择一个条目", type:'fail'});
+  					return false;
+  				}
+  				if(selecteds.length){
+  					this.toRight(selecteds);
+  				}
+  			},
+			leftAll : function($ele){
+				var selecteds = $ele.find('option');
+  				if(selecteds.length){
+  					this.toRight(selecteds);
+  				}
+			},
+			right : function($ele,single){
+				var selecteds = $ele.find('option:selected');
+				if(single && selecteds.length > 1){
+  					msgBox.tip({content: "只能选择一个条目", type:'fail'});
+  					return false;
+  				}
+  				if(selecteds.length){
+  					this.toLeft(selecteds);
+  				}
+			},
+			rightAll :function($ele){
+				var selecteds = $ele.find('option');
+  				if(selecteds.length){
+  					this.toLeft(selecteds);
+  				}
+			}
+  		},
+  		toLeft : function(obj){
+  			var opt = this.option,
+  				$ele= $('#'+opt.leftSelectId);
+  			this.move(obj,$ele,opt.single);
+  		},
+  		toRight : function(obj){
+  			var opt = this.option,
+  				$ele= $('#'+opt.rightSelectId);
+  			this.move(obj,$ele,opt.single);
+  		},
+  		move : function(obj,$ele,single){
+  			if(!obj.length){
+  				$ele[single?'html':'append']('<option value="'+obj.value+'">'+obj.text+'</option>');
+  				if(!single)$(obj).remove();
+  			}else{
+  				for(var i = 0,len = obj.length;i < len;i++){
+  					$ele.append('<option value="'+obj[i].value+'">'+obj[i].text+'</option>');
+  					$(obj).remove();
+  				}
+  			}
+  		},
+  		showMutualValue : function(){
+  			var thie = this,
+  				opt  = thie.option,
+  				sDate   = $("#"+opt.rightSelectId).find("option"),
+  				results = [];
+  				
+  			if(sDate.length == 0){
+				msgBox.info({content:"请选择数据",type:"fail"});
+				return false;
+			}
+			$.each(sDate,function(i, val){
+				results.push({
+					id: this.value,
+					text: this.text
+				});
+			});
+			$('#'+opt.controlId).select2("data", opt.single?{id: results[0].id, text: results[0].text}:results);
+  			$('#'+opt.modalId).modal('hide');
+  			SelectControl.openPutAwayClear(opt.controlId);
+  			if(typeof opt.callback === 'function'){
+  				opt.callback.call(thie,results);
+  			}
+  		},
+  		appendDom : function(){
+  			var opt = this.option;
+  			var pDom = [
+  				'<div class="select2-wrap input-group  w-p100">',
+  					'<div class="fl w-p100">',
+  						'<input type="hidden" id="'+opt.controlId+'" name="'+opt.controlId.split("-")[1]+'" search="search" style="width:100%"/>',
+  					'</div>',
+  					'<a class="btn btn-file no-all input-group-btn" href="###"  id="'+opt.openBtnId+'" role="button">',
+  						'<i class="fa fa-group"></i>',
+  					'</a>',
+  					(opt.single?'':SelectControl.getZhaiKaiDom(opt.clearBtnId)),
+  				'</div>'
+  			],
+  			mDom = [
+  				'<div class="modal fade" id="'+opt.modalId+'" aria-hidden="false">',
+  					'<div class="modal-dialog modal-tree">',
+  						'<div class="modal-content">',
+  							'<div class="modal-header clearfix">',
+  								'<button type="button" class="close" data-dismiss="modal" onClick="">×</button>',
+  								'<h4 class="modal-title fl">'+opt.title+'</h4>',
+  							'</div>',
+  							'<div class="modal-body clearfix">',
+  								'<div class="ms2side__div">',
+  									'<div class="ms2side__select">',
+  										'<div class="ms2side__header">'+opt.title+'选择框</div>',
+  										'<select title="'+opt.title+'选择框" name="'+opt.leftSelectId+'" id="'+opt.leftSelectId+'" size="0" multiple="multiple" class="select-list-h"></select>',
+  									'</div>',
+  									'<div class="ms2side__options" id="move'+opt.modalId+'">',
+  										'<p class="AddOne" title="添加" name="left"><span></span></p>',
+  										'<p class="AddAll" title="添加所有" name="leftAll"><span></span></p>',
+  										'<p class="RemoveOne" title="删除" name="right"><span></span></p>',
+  										'<p class="RemoveAll" title="删除所有" name="rightAll"><span></span></p>',
+  									'</div>',
+  									'<div class="ms2side__select">',
+  										'<div class="ms2side__header">已选'+opt.title+'框</div>',
+  										'<select title="已选'+opt.title+'框" name="'+opt.rightSelectId+'" id="'+opt.rightSelectId+'" size="0" multiple="multiple" class="select-list-h"></select>',
+  									'</div>',
+  								'</div>',
+  							'</div>',
+  							'<div class="modal-footer form-btn">',
+  								'<button class="btn dark" type="button" id="'+opt.confirmId+'">保 存</button>',
+  								'<button class="btn" type="button" data-dismiss="modal">关 闭</button>',
+  							'</div>',
+  						'</div>',
+  					'</div>',
+  				'</div>'
+  			];
+  			if(opt.container){
+  				$('#'+opt.container).html(pDom.join(''));
+  			}
+  			JCTree.getModalBody().append(mDom.join(''));
+  		},
+  		getOptions : function(opt){
+  			var option = {
+  				container : null,
+				controlId : 'mutualName'+this.index+'-mutualName',
+				url       : SelectControl.DEFALUT.urls.mutual,
+				single    : false,
+				title     : '项目',
+				callback  : null,
+				echoData  : null,
+				modalId   : 'openLeftRightDiv'+this.index,
+				openBtnId : 'openLeftRightBtn'+this.index,
+				clearBtnId: 'leftRightClearBtn'+this.index,
+				leftSelectId : 'leftList'+this.index,
+				rightSelectId: 'rightList'+this.index,
+				confirmId    : 'okMutualBtn'+this.index
+  			};
+  			return option;
+  		}
+  	};
+
+	JCTree.init = function(option){
 		return new SelectControl(option);
 	};
 
-	selectControl.orgDept = function(option){
+	JCTree.orgDept = function(option){
 		return new SelectMove(option);
 	};
 
+	JCTree.ztree = function(option){
+		return new SelectZtree(option);
+	};
+
+	JCTree.mutual = function(option){
+		return new SelectMutual(option);
+	};
+
 	for (var i in SelectControl) {
-        selectControl[i] = SelectControl[i];
+		JCTree[i] = SelectControl[i];
     }
 
-	window.selectControl = selectControl;
+	window.JCTree = JCTree;
 })(jQuery);
